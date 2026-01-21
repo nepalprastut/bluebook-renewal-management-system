@@ -25,6 +25,10 @@ CREATE TABLE vehicle_owners (
 INSERT INTO vehicle_owners (user_id, full_name, citizenship_no, district, mobile_no)
 VALUES (1, 'Ram Bahadur', '123-456', 'Kathmandu', '98XXXXXXXX');
 
+INSERT INTO vehicle_owners (user_id, full_name, citizenship_no, district, mobile_no)
+VALUES (2, 'Hari Bahadur', '987-987', 'Lalitpur', '98XXXXXXXX');
+
+
 SELECT * FROM vehicle_owners;
 
 
@@ -60,6 +64,11 @@ CREATE TABLE vehicles (
 
 INSERT INTO vehicles (owner_id, plate_no, vehicle_type, engine_no, chassis_no)
 VALUES (1, 'BA-2-PA-1234', 'Bike', 'ENG123', 'CHS123');
+
+INSERT INTO vehicles (owner_id, plate_no, vehicle_type, engine_no, chassis_no)
+VALUES (2, 'BA-2-PA-1284', 'car', 'ENG13', 'CHS12');
+
+
 
 SELECT * FROM vehicles;
 
