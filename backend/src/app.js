@@ -24,3 +24,9 @@ app.listen(3000, () => {
 });
 
 app.use(express.static(path.join(__dirname, "../../frontend")));
+
+const vehicleRoutes = require("./routes/vehicles");
+app.use("/api/vehicles", vehicleRoutes);
+
+const renewalRoutes = require("./routes/renewals");
+app.use("/api/renewals", renewalRoutes);
