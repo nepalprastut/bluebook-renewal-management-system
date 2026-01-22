@@ -1,76 +1,229 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Add Vehicle</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Add Vehicle | FleetManager</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <style>
-    body {
-      font-family: Arial;
-      padding: 20px;
-      max-width: 500px;
-      margin: auto;
+    :root {
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --bg-light: #f8fafc;
+      --sidebar-width: 240px;
+      --text-dark: #1e293b;
+      --border-color: #e2e8f0;
     }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      display: flex;
+      background-color: var(--bg-light);
+    }
+
+    /* Sidebar - Same as Renewal Page */
+    nav {
+      width: var(--sidebar-width);
+      height: 100vh;
+      background: #1e293b;
+      color: white;
+      position: fixed;
+      padding-top: 20px;
+    }
+
+    nav h2 {
+      text-align: center;
+      font-size: 1.2rem;
+      color: #38bdf8;
+      margin-bottom: 30px;
+    }
+
+    nav a {
+      display: block;
+      color: #cbd5e1;
+      padding: 15px 25px;
+      text-decoration: none;
+      transition: 0.3s;
+    }
+
+    nav a:hover, nav a.active {
+      background: #334155;
+      color: white;
+      border-left: 4px solid var(--primary);
+    }
+
+    /* Main Layout */
+    main {
+      margin-left: var(--sidebar-width);
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px;
+    }
+
+    .form-container {
+      background: white;
+      width: 100%;
+      max-width: 500px;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+      border: 1px solid var(--border-color);
+    }
+
+    h2 { margin-top: 0; color: var(--text-dark); }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
     label {
       display: block;
-      margin-top: 10px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #64748b;
     }
-    input {
+
+    input, select {
       width: 100%;
-      padding: 8px;
-      margin-top: 5px;
+      padding: 12px;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      font-size: 1rem;
+      box-sizing: border-box; /* Ensures padding doesn't affect width */
+      transition: border-color 0.2s;
     }
+
+    input:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+
     button {
-      margin-top: 15px;
-      padding: 10px;
       width: 100%;
+      padding: 12px;
+      background-color: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
     }
+
+    button:hover {
+      background-color: var(--primary-hover);
+    }
+
     .msg {
-      margin-top: 15px;
-      font-weight: bold;
+      margin-top: 20px;
+      padding: 12px;
+      border-radius: 6px;
+      text-align: center;
+      display: none; /* Hidden by default */
+    }
+
+    .back-link {
+      align-self: flex-start;
+      margin-bottom: 20px;
+      color: var(--primary);
+      text-decoration: none;
+      font-weight: 500;
     }
   </style>
 </head>
 
-<a href="index.html">← Back to Vehicle List</a>
-
-
 <body>
-  <h2>Add New Vehicle</h2>
 
-  <label>Owner ID</label>
-  <input type="number" id="owner_id" placeholder="e.g. 1">
+<nav>
+  <h2>FleetManager</h2>
+  <a href="index.html"><i class="fas fa-car"></i> &nbsp; Vehicles</a>
+  <a href="renewals.html"><i class="fas fa-history"></i> &nbsp; Renewal History</a>
+  <a href="#"><i class="fas fa-file-invoice"></i> &nbsp; Payments</a>
+  <a href="#"><i class="fas fa-cog"></i> &nbsp; Settings</a>
+</nav>
 
-  <label>Plate Number</label>
-  <input type="text" id="plate_no" placeholder="e.g. BA-2-PA-5678">
+<main>
+  <a href="index.html" class="back-link">← Back to Vehicle List</a>
 
-  <label>Vehicle Type</label>
-  <input type="text" id="vehicle_type" placeholder="Bike / Car">
+  <div class="form-container">
+    <h2>Add New Vehicle</h2>
+    
+    <div class="form-group">
+      <label>Owner ID</label>
+      <input type="number" id="owner_id" placeholder="Enter owner identification number">
+    </div>
 
-  <button onclick="addVehicle()">Add Vehicle</button>
+    <div class="form-group">
+      <label>Plate Number</label>
+      <input type="text" id="plate_no" placeholder="e.g. BA-2-PA-5678">
+    </div>
 
-  <div class="msg" id="message"></div>
+    <div class="form-group">
+      <label>Vehicle Type</label>
+      <select id="vehicle_type">
+        <option value="">Select Type</option>
+        <option value="Bike">Bike</option>
+        <option value="Car">Car</option>
+        <option value="Truck">Truck</option>
+        <option value="Other">Other</option>
+      </select>
+    </div>
+
+    <button onclick="addVehicle()">Confirm & Add Vehicle</button>
+
+    <div class="msg" id="message"></div>
+  </div>
+</main>
 
 <script>
 async function addVehicle() {
   const owner_id = document.getElementById("owner_id").value;
   const plate_no = document.getElementById("plate_no").value;
   const vehicle_type = document.getElementById("vehicle_type").value;
-
-  const res = await fetch("/api/vehicles", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ owner_id, plate_no, vehicle_type })
-  });
-
-  const data = await res.json();
-
   const msg = document.getElementById("message");
 
-  if (res.ok) {
-    msg.style.color = "green";
-    msg.innerText = "Vehicle added successfully!";
-  } else {
+  // Basic validation
+  if (!owner_id || !plate_no || !vehicle_type) {
+    msg.style.display = "block";
+    msg.style.backgroundColor = "#fee2e2";
+    msg.style.color = "#991b1b";
+    msg.innerText = "Please fill in all fields.";
+    return;
+  }
+
+  try {
+    const res = await fetch("/api/vehicles", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ owner_id, plate_no, vehicle_type })
+    });
+
+    const data = await res.json();
+    msg.style.display = "block";
+
+    if (res.ok) {
+      msg.style.backgroundColor = "#dcfce7";
+      msg.style.color = "#166534";
+      msg.innerText = "Vehicle added successfully!";
+      // Clear inputs
+      document.getElementById("owner_id").value = "";
+      document.getElementById("plate_no").value = "";
+      document.getElementById("vehicle_type").value = "";
+    } else {
+      msg.style.backgroundColor = "#fee2e2";
+      msg.style.color = "#991b1b";
+      msg.innerText = data.error || "Something went wrong.";
+    }
+  } catch (err) {
+    msg.style.display = "block";
     msg.style.color = "red";
-    msg.innerText = data.error;
+    msg.innerText = "Connection error. Is the server running?";
   }
 }
 </script>
