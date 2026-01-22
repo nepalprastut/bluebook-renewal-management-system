@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Vehicle List</title>
+  <style>
+    body { font-family: Arial; padding: 20px; }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { border: 1px solid #ccc; padding: 10px; }
+    th { background: #f0f0f0; }
+  </style>
+</head>
+
+<a href="add_vehicle.html">Add Vehicle</a>
+
+
+<body>
+  <h2>Registered Vehicles</h2>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Owner</th>
+        <th>Plate No</th>
+        <th>Type</th>
+        <th>Expiry Date</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody id="vehicleTable"></tbody>
+  </table>
+
+<script>
+async function loadVehicles() {
+  const res = await fetch("/api/vehicles");
+  const data = await res.json();
+
+  const table = document.getElementById("vehicleTable");
+  table.innerHTML = "";
+
+  data.forEach(v => {
+    table.innerHTML += `
+      <tr>
+        <td>${v.full_name}</td>
+        <td>${v.plate_no}</td>
+        <td>${v.vehicle_type}</td>
+        <td>${v.expiry_date}</td>
+        <td>${v.status}</td>
+      </tr>
+    `;
+  });
+}
+
+loadVehicles();
+</script>
+</body>
+</html>

@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Add Vehicle</title>
+  <style>
+    body {
+      font-family: Arial;
+      padding: 20px;
+      max-width: 500px;
+      margin: auto;
+    }
+    label {
+      display: block;
+      margin-top: 10px;
+    }
+    input {
+      width: 100%;
+      padding: 8px;
+      margin-top: 5px;
+    }
+    button {
+      margin-top: 15px;
+      padding: 10px;
+      width: 100%;
+    }
+    .msg {
+      margin-top: 15px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+
+<a href="index.html">← Back to Vehicle List</a>
+
+
+<body>
+  <h2>Add New Vehicle</h2>
+
+  <label>Owner ID</label>
+  <input type="number" id="owner_id" placeholder="e.g. 1">
+
+  <label>Plate Number</label>
+  <input type="text" id="plate_no" placeholder="e.g. BA-2-PA-5678">
+
+  <label>Vehicle Type</label>
+  <input type="text" id="vehicle_type" placeholder="Bike / Car">
+
+  <button onclick="addVehicle()">Add Vehicle</button>
+
+  <div class="msg" id="message"></div>
+
+<script>
+async function addVehicle() {
+  const owner_id = document.getElementById("owner_id").value;
+  const plate_no = document.getElementById("plate_no").value;
+  const vehicle_type = document.getElementById("vehicle_type").value;
+
+  const res = await fetch("/api/vehicles", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ owner_id, plate_no, vehicle_type })
+  });
+
+  const data = await res.json();
+
+  const msg = document.getElementById("message");
+
+  if (res.ok) {
+    msg.style.color = "green";
+    msg.innerText = "Vehicle added successfully!";
+  } else {
+    msg.style.color = "red";
+    msg.innerText = data.error;
+  }
+}
+</script>
+
+</body>
+</html>
