@@ -66,7 +66,7 @@ INSERT INTO vehicles (owner_id, plate_no, vehicle_type, engine_no, chassis_no)
 VALUES (1, 'BA-2-PA-1234', 'Bike', 'ENG123', 'CHS123');
 
 INSERT INTO vehicles (owner_id, plate_no, vehicle_type, engine_no, chassis_no)
-VALUES (2, 'BA-2-PA-1284', 'car', 'ENG13', 'CHS12');
+VALUES (6, 'BA-2-PA-1264', 'Car', 'ENG133', 'CHS128');
 
 
 
@@ -85,6 +85,9 @@ CREATE TABLE bluebooks (
 
 INSERT INTO bluebooks (vehicle_id, issue_date, expiry_date, status)
 VALUES (1, '2023-01-01', '2024-01-01', 'EXPIRED');
+
+INSERT INTO bluebooks (vehicle_id, issue_date, expiry_date, status)
+VALUES (16, '2024-01-01', '2025-01-01', 'EXPIRED');
 
 SELECT * FROM bluebooks;
 
@@ -106,6 +109,12 @@ CREATE TABLE renewals (
 INSERT INTO renewals (bluebook_id, renewal_date, valid_from, valid_to, total_amount)
 VALUES (1, '2024-02-01', '2024-02-01', '2025-02-01', 2500);
 
+
+INSERT INTO renewals (bluebook_id, renewal_date, valid_from, valid_to, total_amount)
+VALUES (2, '2024-07-15', '2024-07-15', '2025-07-15', 3000);
+
+
+
 SELECT * FROM renewals;
 
 
@@ -123,14 +132,22 @@ CREATE TABLE payments (
 INSERT INTO payments (renewal_id, payment_date, amount, payment_method)
 VALUES (1, '2024-02-01', 2500, 'Cash');
 
+INSERT INTO payments (renewal_id, payment_date, amount, payment_method)
+VALUES (3, '2025-02-01', 3000, 'Cash');
+
 SELECT * FROM payments;
 
 
+SELECT * FROM vehicles;
+
+
+SELECT * FROM users;
+SELECT * FROM vehicle_owners;
 
 
 
-
-
+DELETE FROM renewals 
+WHERE renewal_id = 2;
 
 
 

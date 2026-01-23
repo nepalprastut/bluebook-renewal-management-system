@@ -1,18 +1,10 @@
 const express = require("express");
 const cors = require("cors");
-const { Pool } = require("pg");
+const pool = require("./db");
 const path = require("path");
 
 const app = express();
 app.use(express.json());
-
-const pool = new Pool({
-  user: "postgres",
-  host: "localhost",
-  database: "project",
-  password: "admin@123",
-  port: 5432,
-});
 
 app.get("/test-db", async (req, res) => {
   const result = await pool.query("SELECT * FROM vehicles");
@@ -30,3 +22,6 @@ app.use("/api/vehicles", vehicleRoutes);
 
 const renewalRoutes = require("./routes/renewals");
 app.use("/api/renewals", renewalRoutes);
+
+const authRoutes = require("./routes/auth");
+app.use("/api", authRoutes);

@@ -51,9 +51,9 @@ async function addVehicle() {
   const msg = document.getElementById("msg");
   msg.style.display = "none";
 
-  const owner_id = owner_id.value;
-  const plate_no = plate_no.value;
-  const vehicle_type = vehicle_type.value;
+  const owner_id = document.getElementById("owner_id").value;
+  const plate_no = document.getElementById("plate_no").value;
+  const vehicle_type = document.getElementById("vehicle_type").value;
 
   if (!owner_id || !plate_no || !vehicle_type) {
     msg.className = "msg error";
@@ -62,24 +62,37 @@ async function addVehicle() {
     return;
   }
 
-  const res = await fetch("/api/vehicles", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ owner_id, plate_no, vehicle_type })
-  });
+  try {
+    const res = await fetch("/api/vehicles", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ owner_id, plate_no, vehicle_type })
+    });
 
-  if (res.ok) {
-    msg.className = "msg success";
-    msg.innerText = "Vehicle added successfully!";
-    owner_id.value = plate_no.value = "";
-    vehicle_type.value = "";
-  } else {
+    const data = await res.json();
+
+    if (res.ok) {
+      msg.className = "msg success";
+      msg.innerText = data.message || "Vehicle added successfully!";
+      msg.style.display = "block";
+
+      // Clear inputs
+      document.getElementById("owner_id").value = "";
+      document.getElementById("plate_no").value = "";
+      document.getElementById("vehicle_type").value = "";
+    } else {
+      msg.className = "msg error";
+      msg.innerText = data.error || "Failed to add vehicle.";
+      msg.style.display = "block";
+    }
+  } catch (err) {
     msg.className = "msg error";
-    msg.innerText = "Failed to add vehicle.";
+    msg.innerText = "Server error. Check console.";
+    msg.style.display = "block";
+    console.error(err);
   }
-
-  msg.style.display = "block";
 }
+
 </script>
 
 </body>

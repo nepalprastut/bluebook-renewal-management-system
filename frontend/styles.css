@@ -140,6 +140,7 @@ th {
 }
 
 td {
+  text-align: center;
   padding: 15px;
   border-top: 1px solid var(--border-color);
 }
@@ -231,4 +232,40 @@ select:focus {
   justify-content: center;
   align-items: flex-start;
   padding-top: 60px;
+}
+
+
+
+
+/* New code for register template */
+
+/* Center the form specifically on the register page */
+.form-page {
+  display: flex;
+  justify-content: center;
+  align-items: center; /* Vertically center */
+  min-height: 100vh;
+  padding: 20px;
+  /* If you don't have the sidebar on this page, uncomment the line below: */
+  /* margin-left: 0 !important; */
+}
+
+.registration-card {
+  border-top: 4px solid var(--primary); /* Adds a nice accent line at the top */
+}
+
+.registration-card input {
+  margin-bottom: 5px; /* Slight extra spacing */
+  background-color: #ffffff;
+  transition: all 0.2s ease;
+}
+
+/* Style the message paragraph to look like your other alerts */
+#msg:not(:empty) {
+  display: block;
+  margin-top: 20px;
+  font-size: 0.9rem;
+  background: #f1f5f9;
+  border: 1px solid var(--border-color);
+  color: var(--text-dark);
 }

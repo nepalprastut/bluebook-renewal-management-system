@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Register Owner</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+
+<main class="form-page">
+  <div class="form-container registration-card">
+    <h2 style="margin-top: 0; color: var(--text-dark); text-align: center;">Owner Registration</h2>
+    <p style="text-align: center; color: #64748b; margin-bottom: 25px; font-size: 0.9rem;">Create a new owner account in the system</p>
+
+    <div class="form-group">
+      <input id="username" placeholder="Username">
+    </div>
+    <div class="form-group">
+      <input id="password" type="password" placeholder="Password">
+    </div>
+    <div class="form-group">
+      <input id="full_name" placeholder="Full Name">
+    </div>
+    <div class="form-group">
+      <input id="citizenship_no" placeholder="Citizenship No">
+    </div>
+    <div class="form-group">
+      <input id="district" placeholder="District">
+    </div>
+    <div class="form-group">
+      <input id="mobile_no" placeholder="Mobile No">
+    </div>
+
+    <button class="btn-primary" style="width: 100%; padding: 14px;" onclick="register()">Register Owner</button>
+    <p id="msg" class="msg"></p> </div>
+</main>
+
+<script>
+
+async function register() {
+
+const res = await fetch("http://localhost:3000/api/register", {
+
+method: "POST",
+
+headers: { "Content-Type": "application/json" },
+
+body: JSON.stringify({
+
+username: username.value,
+
+password: password.value,
+
+full_name: full_name.value,
+
+citizenship_no: citizenship_no.value,
+
+district: district.value,
+
+mobile_no: mobile_no.value
+
+})
+
+});
+
+
+
+const data = await res.json();
+
+msg.innerText = data.message || data.error;
+
+
+
+if (data.owner_id) {
+
+msg.innerText += " | Owner ID: " + data.owner_id;
+
+}
+
+}
+
+</script>
+</body>
+</html>
