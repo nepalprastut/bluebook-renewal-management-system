@@ -2,134 +2,21 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Renewal History | Vehicle Management</title>
+  <title>Renewal History</title>
+  <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-  <style>
-    :root {
-      --primary: #2563eb;
-      --bg-light: #f8fafc;
-      --sidebar-width: 240px;
-      --text-dark: #1e293b;
-      --border-color: #e2e8f0;
-    }
-
-    body {
-      font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-      margin: 0;
-      display: flex;
-      background-color: var(--bg-light);
-      color: var(--text-dark);
-    }
-
-    /* Sidebar Navigation */
-    nav {
-      width: var(--sidebar-width);
-      height: 100vh;
-      background: #1e293b;
-      color: white;
-      position: fixed;
-      padding-top: 20px;
-    }
-
-    nav h2 {
-      text-align: center;
-      font-size: 1.2rem;
-      margin-bottom: 30px;
-      color: #38bdf8;
-    }
-
-    nav a {
-      display: block;
-      color: #cbd5e1;
-      padding: 15px 25px;
-      text-decoration: none;
-      transition: 0.3s;
-    }
-
-    nav a:hover, nav a.active {
-      background: #334155;
-      color: white;
-      border-left: 4px solid var(--primary);
-    }
-
-    /* Main Content Area */
-    main {
-      margin-left: var(--sidebar-width);
-      flex-grow: 1;
-      padding: 40px;
-    }
-
-    header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 30px;
-    }
-
-    /* Card Styling for Table */
-    .card {
-      background: white;
-      border-radius: 8px;
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-      overflow: hidden;
-      border: 1px solid var(--border-color);
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      text-align: left;
-    }
-
-    th {
-      background: #f1f5f9;
-      padding: 15px;
-      font-weight: 600;
-      font-size: 0.85rem;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
-
-    td {
-      padding: 15px;
-      border-top: 1px solid var(--border-color);
-      font-size: 0.95rem;
-    }
-
-    tr:hover {
-      background-color: #f8fafc;
-    }
-
-    /* Status Badges */
-    .badge {
-      padding: 4px 10px;
-      border-radius: 12px;
-      font-size: 0.75rem;
-      font-weight: bold;
-    }
-    .badge-paid { background: #dcfce7; color: #166534; }
-    .badge-pending { background: #fef9c3; color: #854d0e; }
-
-  </style>
 </head>
-
 <body>
 
 <nav>
-  <h2>FleetManager</h2>
-  <a href="index.html"><i class="fas fa-car"></i> &nbsp; Vehicles</a>
-  <a href="#" class="active"><i class="fas fa-history"></i> &nbsp; Renewal History</a>
-  <a href="#"><i class="fas fa-file-invoice"></i> &nbsp; Payments</a>
-  <a href="#"><i class="fas fa-cog"></i> &nbsp; Settings</a>
+  <h2>Bluebook Renewal</h2>
+  <a href="index.html"><i class="fas fa-car"></i> Vehicles</a>
+  <a href="renewals.html" class="active"><i class="fas fa-history"></i> Renewal History</a>
 </nav>
 
 <main>
   <header>
     <h1>Bluebook Renewal History</h1>
-    <button style="background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer;">
-      + Export Report
-    </button>
   </header>
 
   <div class="card">
@@ -138,44 +25,40 @@
         <tr>
           <th>Plate No</th>
           <th>Renewal Date</th>
-          <th>Validity Period</th>
-          <th>Amount Paid</th>
+          <th>Valid Period</th>
+          <th>Amount</th>
           <th>Payment Date</th>
-          <th>Status</th>
         </tr>
       </thead>
-      <tbody id="renewalTable">
-        </tbody>
+      <tbody id="renewalTable"></tbody>
     </table>
   </div>
 </main>
 
 <script>
+function formatDate(d) {
+  if (!d) return "-";
+  return new Date(d).toISOString().split("T")[0];
+}
+
 async function loadRenewals() {
-  // Mock API call (Replace with your actual fetch)
-  // const res = await fetch("/api/renewals");
-  // const data = await res.json();
-  
-  const data = [
-    { plate_no: "BA 1 PA 1234", renewal_date: "2024-01-15", valid_from: "2024-01-15", valid_to: "2025-01-14", amount: 5500, payment_date: "2024-01-15" },
-    { plate_no: "BAG 5567", renewal_date: "2024-02-10", valid_from: "2024-02-10", valid_to: "2025-02-09", amount: null, payment_date: null }
-  ];
+  const res = await fetch("/api/renewals");
+  const data = await res.json();
 
   const table = document.getElementById("renewalTable");
-  table.innerHTML = data.map(r => `
-    <tr>
-      <td><strong>${r.plate_no}</strong></td>
-      <td>${r.renewal_date}</td>
-      <td><small>${r.valid_from} to ${r.valid_to}</small></td>
-      <td>${r.amount ? 'Rs. ' + r.amount : '-'}</td>
-      <td>${r.payment_date ?? "-"}</td>
-      <td>
-        <span class="badge ${r.amount ? 'badge-paid' : 'badge-pending'}">
-          ${r.amount ? 'PAID' : 'PENDING'}
-        </span>
-      </td>
-    </tr>
-  `).join('');
+  table.innerHTML = "";
+
+  data.forEach(r => {
+    table.innerHTML += `
+      <tr>
+        <td><strong>${r.plate_no}</strong></td>
+        <td>${formatDate(r.renewal_date)}</td>
+        <td>${formatDate(r.valid_from)} → ${formatDate(r.valid_to)}</td>
+        <td>${r.amount ?? "-"}</td>
+        <td>${formatDate(r.payment_date)}</td>
+      </tr>
+    `;
+  });
 }
 
 loadRenewals();
