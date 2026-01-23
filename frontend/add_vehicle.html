@@ -19,11 +19,6 @@
     <h2>Add New Vehicle</h2>
 
     <div class="form-group">
-      <label>Owner ID</label>
-      <input type="number" id="owner_id">
-    </div>
-
-    <div class="form-group">
       <label>Plate Number</label>
       <input type="text" id="plate_no">
     </div>
@@ -51,11 +46,19 @@ async function addVehicle() {
   const msg = document.getElementById("msg");
   msg.style.display = "none";
 
-  const owner_id = document.getElementById("owner_id").value;
   const plate_no = document.getElementById("plate_no").value;
   const vehicle_type = document.getElementById("vehicle_type").value;
 
-  if (!owner_id || !plate_no || !vehicle_type) {
+  const user_id = sessionStorage.getItem("user_id");
+
+  if (!user_id) {
+    msg.className = "msg error";
+    msg.innerText = "You are not logged in.";
+    msg.style.display = "block";
+    return;
+  }
+
+  if (!plate_no || !vehicle_type) {
     msg.className = "msg error";
     msg.innerText = "All fields are required.";
     msg.style.display = "block";
@@ -63,37 +66,26 @@ async function addVehicle() {
   }
 
   try {
-    const res = await fetch("/api/vehicles", {
+    const res = await fetch(`/api/vehicles?user_id=${user_id}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ owner_id, plate_no, vehicle_type })
+      body: JSON.stringify({ plate_no, vehicle_type })
     });
 
     const data = await res.json();
 
-    if (res.ok) {
-      msg.className = "msg success";
-      msg.innerText = data.message || "Vehicle added successfully!";
-      msg.style.display = "block";
+    msg.className = res.ok ? "msg success" : "msg error";
+    msg.innerText = data.message || data.error;
+    msg.style.display = "block";
 
-      // Clear inputs
-      document.getElementById("owner_id").value = "";
-      document.getElementById("plate_no").value = "";
-      document.getElementById("vehicle_type").value = "";
-    } else {
-      msg.className = "msg error";
-      msg.innerText = data.error || "Failed to add vehicle.";
-      msg.style.display = "block";
-    }
   } catch (err) {
     msg.className = "msg error";
-    msg.innerText = "Server error. Check console.";
+    msg.innerText = "Server not responding";
     msg.style.display = "block";
-    console.error(err);
   }
 }
-
 </script>
+
 
 </body>
 </html>

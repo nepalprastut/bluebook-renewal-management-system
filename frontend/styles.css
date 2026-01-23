@@ -269,3 +269,48 @@ select:focus {
   border: 1px solid var(--border-color);
   color: var(--text-dark);
 }
+
+
+/* for login page*/
+.login-body {
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(135deg, #1e3c72, #2a5298);
+  font-family: Arial, sans-serif;
+}
+
+.login-card {
+  background: white;
+  padding: 40px;
+  width: 350px;
+  text-align: center;
+  border-radius: 8px;
+}
+
+.login-card h1 {
+  margin-bottom: 10px;
+}
+
+.subtitle {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 20px;
+}
+
+.login-card input {
+  width: 100%;
+  margin: 8px 0;
+  padding: 10px;
+}
+
+.login-card button {
+  width: 100%;
+  margin-top: 10px;
+  padding: 10px;
+  background: #2a5298;
+  color: white;
+  border: none;
+  cursor: pointer;
+}

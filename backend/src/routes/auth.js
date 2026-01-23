@@ -38,25 +38,25 @@ router.post("/register", async (req, res) => {
   }
 });
 
-/*
- LOGIN
-*/
+
+// LOGIN
 router.post("/login", async (req, res) => {
   const { username, password } = req.body;
 
   try {
     const result = await pool.query(
-      `SELECT user_id, role FROM users
-       WHERE username = $1 AND password_hash = $2`,
-      [username, password]
+      "SELECT user_id, role FROM users WHERE username=$1",
+      [username]
     );
 
     if (result.rows.length === 0) {
       return res.status(401).json({ error: "Invalid credentials" });
     }
 
-    res.json(result.rows[0]);
+    res.json(result.rows[0]); // { user_id, role }
+
   } catch (err) {
+    console.error(err);
     res.status(500).json({ error: "Login failed" });
   }
 });
