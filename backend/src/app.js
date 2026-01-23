@@ -13,10 +13,10 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, "../../frontend")));
 
 // -------------------- TEST DB ROUTE --------------------
-app.get("/test-db", async (req, res) => {
-  const result = await pool.query("SELECT * FROM vehicles");
-  res.json(result.rows);
-});
+// app.get("/test-db", async (req, res) => {
+//   const result = await pool.query("SELECT * FROM vehicles");
+//   res.json(result.rows);
+// });
 
 // -------------------- API ROUTES --------------------
 const vehicleRoutes = require("./routes/vehicles");
@@ -28,7 +28,11 @@ app.use("/api", renewalRoutes);
 const authRoutes = require("./routes/auth");
 app.use("/api", authRoutes);
 
+const adminRoutes = require("./routes/admin");
+app.use("/api/admin", adminRoutes);
+
 // -------------------- START SERVER --------------------
 app.listen(3000, () => {
   console.log("Server running on port 3000");
 });
+
