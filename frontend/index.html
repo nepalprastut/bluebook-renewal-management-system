@@ -1,30 +1,3 @@
-<script>
-  // 1. THE AUTH GUARD (Run this immediately)
-  function checkAuth() {
-    const role = sessionStorage.getItem("role");
-    if (!role || role !== "OWNER") {
-      // replace() ensures the "index.html" is removed from history 
-      // so the user can't "Go Back" to it.
-      window.location.replace("login.html");
-    }
-  }
-  checkAuth();
-
-  // 2. THE LOGOUT FUNCTION
-  function logout() {
-    sessionStorage.clear();
-    // replace() is key here to prevent back-button access
-    window.location.replace("login.html");
-  }
-
-  // 3. CACHE BUSTER (Prevents the browser from loading a "snapshot" of the page)
-  window.onpageshow = function(event) {
-    if (event.persisted) {
-      window.location.reload();
-    }
-  };
-</script>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -32,20 +5,46 @@
   <title>Vehicle List</title>
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-  <style>
-    .logout-btn {
-      margin-left: auto;
-      background: #ff4d4d;
-      color: white !important;
-      padding: 8px 15px;
-      border-radius: 5px;
-      cursor: pointer;
-      text-decoration: none;
-      display: flex;
-      align-items: center;
-      gap: 8px;
+  
+  <script>
+    // 1. THE AUTH GUARD (Prevents unauthorized access)
+    function checkAuth() {
+      const role = sessionStorage.getItem("role");
+      if (!role || role !== "OWNER") {
+        window.location.replace("login.html");
+      }
     }
-    .logout-btn:hover { background: #ff3333; }
+    checkAuth();
+
+    // 2. THE LOGOUT FUNCTION
+    function logout() {
+      sessionStorage.clear();
+      window.location.replace("login.html");
+    }
+
+    // 3. CACHE BUSTER (Prevents back-button access after logout)
+    window.onpageshow = function(event) {
+      if (event.persisted) {
+        window.location.reload();
+      }
+    };
+  </script>
+
+  <style>
+    /* Status and Button Styles */
+    .btn-renew {
+      background-color: #2563eb;
+      color: white;
+      border: none;
+      padding: 5px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+    .btn-renew:hover { background-color: #1d4ed8; }
+    
+    .status-active { color: #16a34a; font-weight: bold; }
+    .status-expired { color: #dc2626; font-weight: bold; }
   </style>
 </head>
 <body>
@@ -54,9 +53,7 @@
   <h2>Bluebook Renewal</h2>
   <a href="index.html" class="active"><i class="fas fa-car"></i> Vehicles</a>
   <a href="renewals.html"><i class="fas fa-history"></i> Renewal History</a>
-  <a href="javascript:void(0)" onclick="logout()" class="logout-btn">
-    <i class="fas fa-sign-out-alt"></i> Logout
-  </a>
+  <a href="javascript:void(0)" onclick="logout()" style="margin-left:auto; color:red;">Logout</a>
 </nav>
 
 <main>
@@ -67,8 +64,8 @@
 
   <div class="stats-grid">
     <div class="stat-card"><h3>Total Vehicles</h3><p id="totalCount">0</p></div>
-    <div class="stat-card"><h3>Active</h3><p id="activeCount" style="color: var(--success)">0</p></div>
-    <div class="stat-card"><h3>Expired</h3><p id="alertCount" style="color: var(--danger)">0</p></div>
+    <div class="stat-card"><h3>Active</h3><p id="activeCount" style="color: #16a34a">0</p></div>
+    <div class="stat-card"><h3>Expired</h3><p id="alertCount" style="color: #dc2626">0</p></div>
   </div>
 
   <div class="card">
@@ -79,7 +76,7 @@
           <th>Plate No</th>
           <th>Type</th>
           <th>Expiry Date</th>
-          <th>Status</th>
+          <th>Status / Action</th>
         </tr>
       </thead>
       <tbody id="vehicleTable"></tbody>
@@ -101,8 +98,12 @@ async function loadVehicles() {
     let total = data.length, active = 0, expired = 0;
 
     data.forEach(v => {
-      if (v.status === 'ACTIVE') active++;
-      if (v.status === 'EXPIRED') expired++;
+      const isExpired = v.status === 'EXPIRED';
+      if (isExpired) expired++; else active++;
+
+      const actionContent = isExpired 
+        ? `<button onclick="payRenewal(${v.bluebook_id})" class="btn-renew">Renew</button>` 
+        : `<span class="status-active">ACTIVE</span>`;
 
       table.innerHTML += `
         <tr>
@@ -110,7 +111,7 @@ async function loadVehicles() {
           <td>${v.plate_no}</td>
           <td>${v.vehicle_type}</td>
           <td>${v.expiry_date ? v.expiry_date.split("T")[0] : "N/A"}</td>
-          <td><span class="status-pill ${v.status}">${v.status || "PENDING"}</span></td>
+          <td>${actionContent}</td>
         </tr>
       `;
     });
@@ -122,6 +123,34 @@ async function loadVehicles() {
     console.error("Error loading vehicles:", err);
   }
 }
+
+async function payRenewal(bluebookId) {
+  if (!bluebookId) {
+    alert("Error: Bluebook ID missing for this vehicle.");
+    return;
+  }
+
+  if (!confirm("Proceed to pay for bluebook renewal?")) return;
+
+  try {
+    const res = await fetch('/api/renewals/pay', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ bluebook_id: bluebookId, amount: 2500 })
+    });
+
+    const result = await res.json();
+    if (res.ok) {
+      alert("Payment Successful! Your bluebook is now active.");
+      loadVehicles(); 
+    } else {
+      alert("Payment failed: " + result.error);
+    }
+  } catch (err) {
+    alert("Server error during payment.");
+  }
+}
+
 loadVehicles();
 </script>
 </body>

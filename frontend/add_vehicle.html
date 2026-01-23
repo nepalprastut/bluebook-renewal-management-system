@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!-- <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -86,6 +86,160 @@ async function addVehicle() {
 }
 </script>
 
+
+</body>
+</html> -->
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Add Vehicle</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  
+  <script>
+    // 1. THE AUTH GUARD
+    function checkAuth() {
+      const role = sessionStorage.getItem("role");
+      if (!role || role !== "OWNER") {
+        window.location.replace("login.html");
+      }
+    }
+    checkAuth();
+
+    // 2. LOGOUT FUNCTION
+    function logout() {
+      sessionStorage.clear();
+      window.location.replace("login.html");
+    }
+  </script>
+
+  <style>
+    .logout-btn {
+      margin-left: auto;
+      background: #ff4d4d;
+      color: white !important;
+      padding: 8px 15px;
+      border-radius: 5px;
+      cursor: pointer;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .logout-btn:hover { background: #ff3333; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <h2>Bluebook Renewal</h2>
+  <a href="index.html"><i class="fas fa-car"></i> Vehicles</a>
+  <a href="renewals.html"><i class="fas fa-history"></i> Renewal History</a>
+  <a href="javascript:void(0)" onclick="logout()" class="logout-btn">
+    <i class="fas fa-sign-out-alt"></i> Logout
+  </a>
+</nav>
+
+<main class="form-page">
+  <div class="form-container">
+    <h2>Add New Vehicle</h2>
+
+    <div class="form-group">
+      <label>Plate Number</label>
+      <input type="text" id="plate_no" placeholder="e.g., BA-2-PA-1234">
+    </div>
+
+    <div class="form-group">
+      <label>Vehicle Type</label>
+      <select id="vehicle_type">
+        <option value="">Select Type</option>
+        <option value="Bike">Bike</option>
+        <option value="Scooter">Scooter</option>
+        <option value="Car">Car</option>
+        <option value="Truck">Truck</option>
+        <option value="Bus">Bus</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label>Engine Number</label>
+      <input type="text" id="engine_no" placeholder="Enter Engine No">
+    </div>
+
+    <div class="form-group">
+      <label>Chassis Number</label>
+      <input type="text" id="chassis_no" placeholder="Enter Chassis No">
+    </div>
+
+    <button class="btn-primary" onclick="addVehicle()">Add Vehicle</button>
+
+    <div class="msg" id="msg" style="display: none; margin-top: 15px;"></div>
+  </div>
+</main>
+
+<script>
+async function addVehicle() {
+  const msg = document.getElementById("msg");
+  msg.style.display = "none";
+
+  const plate_no = document.getElementById("plate_no").value;
+  const vehicle_type = document.getElementById("vehicle_type").value;
+  const engine_no = document.getElementById("engine_no").value;
+  const chassis_no = document.getElementById("chassis_no").value;
+
+  const user_id = sessionStorage.getItem("user_id");
+
+  // Basic Validation
+  if (!plate_no || !vehicle_type || !engine_no || !chassis_no) {
+    msg.className = "msg error";
+    msg.innerText = "All fields (Plate, Type, Engine, Chassis) are required.";
+    msg.style.display = "block";
+    msg.style.color = "red";
+    return;
+  }
+
+  try {
+    const res = await fetch(`/api/vehicles?user_id=${user_id}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ 
+        plate_no, 
+        vehicle_type,
+        engine_no,
+        chassis_no 
+      })
+    });
+
+    const data = await res.json();
+
+    if (res.ok) {
+      msg.className = "msg success";
+      msg.innerText = "Vehicle added successfully! Redirecting...";
+      msg.style.display = "block";
+      msg.style.color = "green";
+      
+      // Redirect back to list after success
+      setTimeout(() => {
+        window.location.href = "index.html";
+      }, 1500);
+    } else {
+      msg.className = "msg error";
+      msg.innerText = data.error || "Failed to add vehicle";
+      msg.style.display = "block";
+      msg.style.color = "red";
+    }
+
+  } catch (err) {
+    msg.className = "msg error";
+    msg.innerText = "Server not responding";
+    msg.style.display = "block";
+    msg.style.color = "red";
+  }
+}
+</script>
 
 </body>
 </html>

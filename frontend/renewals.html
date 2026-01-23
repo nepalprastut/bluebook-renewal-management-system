@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!-- <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -64,5 +64,79 @@ async function loadRenewals() {
 loadRenewals();
 </script>
 
+</body>
+</html> -->
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Renewal History</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+
+<script>
+  // Auth Guard
+  const user_id = sessionStorage.getItem("user_id");
+  if (!sessionStorage.getItem("role")) window.location.replace("login.html");
+  
+  function logout() {
+    sessionStorage.clear();
+    window.location.replace("login.html");
+  }
+</script>
+
+<nav>
+  <h2>Bluebook Renewal</h2>
+  <a href="index.html"><i class="fas fa-car"></i> Vehicles</a>
+  <a href="renewals.html" class="active"><i class="fas fa-history"></i> Renewal History</a>
+  <a href="javascript:void(0)" onclick="logout()" style="margin-left:auto; color:red;">Logout</a>
+</nav>
+
+<main>
+  <header>
+    <h1>Bluebook Renewal History</h1>
+  </header>
+
+  <div class="card">
+    <table>
+      <thead>
+        <tr>
+          <th>Plate No</th>
+          <th>Renewal Date</th>
+          <th>Valid Period</th>
+          <th>Amount</th>
+          <th>Method</th>
+        </tr>
+      </thead>
+      <tbody id="renewalTable"></tbody>
+    </table>
+  </div>
+</main>
+
+<script>
+async function loadRenewals() {
+  const res = await fetch(`/api/renewals?user_id=${user_id}`);
+  const data = await res.json();
+  const table = document.getElementById("renewalTable");
+  table.innerHTML = "";
+
+  data.forEach(r => {
+    table.innerHTML += `
+      <tr>
+        <td><strong>${r.plate_no}</strong></td>
+        <td>${new Date(r.renewal_date).toLocaleDateString()}</td>
+        <td>${new Date(r.valid_from).toLocaleDateString()} - ${new Date(r.valid_to).toLocaleDateString()}</td>
+        <td>Rs. ${r.amount}</td>
+        <td><span class="status-pill ACTIVE">${r.payment_method}</span></td>
+      </tr>
+    `;
+  });
+}
+loadRenewals();
+</script>
 </body>
 </html>
