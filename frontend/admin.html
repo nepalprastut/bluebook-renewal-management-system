@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin Dashboard - Search</title>
+  <link rel="stylesheet" href="styles.css">
+  <script>
+    // AUTH GUARD: Ensure only ADMIN can stay here
+    if (sessionStorage.getItem("role") !== "ADMIN") {
+      window.location.replace("login.html");
+    }
+    function logout() {
+      sessionStorage.clear();
+      window.location.replace("login.html");
+    }
+  </script>
+</head>
+<body>
+
+<nav>
+  <h2>Bluebook Admin</h2>
+  <a href="javascript:void(0)" onclick="logout()" style="margin-left:auto; color:red;">Logout</a>
+</nav>
+
+<main>
+  <center><h1>Admin Search Portal</h1></center>
+  
+  <div class="card" style="margin-bottom: 20px;">
+    <center><h3>Search Owner by Username</h3></center>
+    <div style="display: flex; gap: 10px;">
+      <input type="text" id="searchUser" placeholder="Enter owner username..." style="flex: 1; padding: 10px;">
+      <button onclick="searchOwner()" class="btn-primary">Search</button>
+    </div>
+  </div>
+
+  <div id="resultArea" style="display: none;">
+    <div class="card" style="background: #f8fafc; margin-bottom: 20px;">
+      <h3>Owner Profile</h3>
+      <div id="profileInfo" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;"></div>
+    </div>
+
+    <div class="card">
+      <center><h3>Registered Vehicles</h3></center>
+      <table>
+        <thead>
+          <tr>
+            <th>Plate No</th>
+            <th>Type</th>
+            <th>Expiry Date</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="vehicleList"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <p id="errorMsg" style="color: red; text-align: center;"></p>
+</main>
+
+<script>
+async function searchOwner() {
+  const username = document.getElementById("searchUser").value;
+  const resultArea = document.getElementById("resultArea");
+  const errorMsg = document.getElementById("errorMsg");
+
+  errorMsg.innerText = "";
+  resultArea.style.display = "none";
+
+  if (!username) return;
+
+  try {
+    const res = await fetch(`/api/admin/search-owner?username=${username}`);
+    const data = await res.json();
+
+    if (!res.ok) {
+      errorMsg.innerText = data.error;
+      return;
+    }
+
+    // Populate Profile
+    const profile = data.profile;
+    document.getElementById("profileInfo").innerHTML = `
+      <p><strong>Name:</strong> ${profile.full_name}</p>
+      <p><strong>Citizenship:</strong> ${profile.citizenship_no}</p>
+      <p><strong>District:</strong> ${profile.district}</p>
+      <p><strong>Mobile:</strong> ${profile.mobile_no}</p>
+    `;
+
+    // Populate Vehicles
+    const vehicleTable = document.getElementById("vehicleList");
+    vehicleTable.innerHTML = "";
+    data.vehicles.forEach(v => {
+      vehicleTable.innerHTML += `
+        <tr>
+          <td>${v.plate_no}</td>
+          <td>${v.vehicle_type}</td>
+          <td>${v.expiry_date ? v.expiry_date.split("T")[0] : "N/A"}</td>
+          <td><span class="status-pill ${v.status}">${v.status || "N/A"}</span></td>
+        </tr>
+      `;
+    });
+
+    resultArea.style.display = "block";
+
+  } catch (err) {
+    errorMsg.innerText = "Error connecting to server.";
+  }
+}
+</script>
+</body>
+</html>

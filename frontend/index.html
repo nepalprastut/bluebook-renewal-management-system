@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Vehicle List</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  
+  <script>
+    // 1. THE AUTH GUARD (Prevents unauthorized access)
+    function checkAuth() {
+      const role = sessionStorage.getItem("role");
+      if (!role || role !== "OWNER") {
+        window.location.replace("login.html");
+      }
+    }
+    checkAuth();
+
+    // 2. THE LOGOUT FUNCTION
+    function logout() {
+      sessionStorage.clear();
+      window.location.replace("login.html");
+    }
+
+    // 3. CACHE BUSTER (Prevents back-button access after logout)
+    window.onpageshow = function(event) {
+      if (event.persisted) {
+        window.location.reload();
+      }
+    };
+  </script>
+
+  <style>
+    /* Status and Button Styles */
+    .btn-renew {
+      background-color: #2563eb;
+      color: white;
+      border: none;
+      padding: 5px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+    .btn-renew:hover { background-color: #1d4ed8; }
+    
+    .status-active { color: #16a34a; font-weight: bold; }
+    .status-expired { color: #dc2626; font-weight: bold; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <h2>Bluebook Renewal</h2>
+  <a href="index.html" class="active"><i class="fas fa-car"></i> Vehicles</a>
+  <a href="renewals.html"><i class="fas fa-history"></i> Renewal History</a>
+  <a href="javascript:void(0)" onclick="logout()" style="margin-left:auto; color:red;">Logout</a>
+</nav>
+
+<main>
+  <header>
+    <h1>Registered Vehicles</h1>
+    <a href="add_vehicle.html" class="btn-add">Add Vehicle</a>
+  </header>
+
+  <div class="stats-grid">
+    <div class="stat-card"><h3>Total Vehicles</h3><p id="totalCount">0</p></div>
+    <div class="stat-card"><h3>Active</h3><p id="activeCount" style="color: #16a34a">0</p></div>
+    <div class="stat-card"><h3>Expired</h3><p id="alertCount" style="color: #dc2626">0</p></div>
+  </div>
+
+  <div class="card">
+    <table>
+      <thead>
+        <tr>
+          <th>Owner</th>
+          <th>Plate No</th>
+          <th>Type</th>
+          <th>Expiry Date</th>
+          <th>Status / Action</th>
+        </tr>
+      </thead>
+      <tbody id="vehicleTable"></tbody>
+    </table>
+  </div>
+</main>
+
+<script>
+const user_id = sessionStorage.getItem("user_id");
+
+async function loadVehicles() {
+  try {
+    const res = await fetch(`/api/owner/vehicles?user_id=${user_id}`);
+    const data = await res.json();
+
+    const table = document.getElementById("vehicleTable");
+    table.innerHTML = "";
+
+    let total = data.length, active = 0, expired = 0;
+
+    data.forEach(v => {
+      const isExpired = v.status === 'EXPIRED';
+      if (isExpired) expired++; else active++;
+
+      const actionContent = isExpired 
+        ? `<button onclick="payRenewal(${v.bluebook_id})" class="btn-renew">Renew</button>` 
+        : `<span class="status-active">ACTIVE</span>`;
+
+      table.innerHTML += `
+        <tr>
+          <td>${v.full_name || "N/A"}</td>
+          <td>${v.plate_no}</td>
+          <td>${v.vehicle_type}</td>
+          <td>${v.expiry_date ? v.expiry_date.split("T")[0] : "N/A"}</td>
+          <td>${actionContent}</td>
+        </tr>
+      `;
+    });
+
+    document.getElementById("totalCount").innerText = total;
+    document.getElementById("activeCount").innerText = active;
+    document.getElementById("alertCount").innerText = expired;
+  } catch (err) {
+    console.error("Error loading vehicles:", err);
+  }
+}
+
+async function payRenewal(bluebookId) {
+  if (!bluebookId) {
+    alert("Error: Bluebook ID missing for this vehicle.");
+    return;
+  }
+
+  if (!confirm("Proceed to pay for bluebook renewal?")) return;
+
+  try {
+    const res = await fetch('/api/renewals/pay', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ bluebook_id: bluebookId, amount: 2500 })
+    });
+
+    const result = await res.json();
+    if (res.ok) {
+      alert("Payment Successful! Your bluebook is now active.");
+      loadVehicles(); 
+    } else {
+      alert("Payment failed: " + result.error);
+    }
+  } catch (err) {
+    alert("Server error during payment.");
+  }
+}
+
+loadVehicles();
+</script>
+</body>
+</html>
