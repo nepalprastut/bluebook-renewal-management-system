@@ -1,25 +1,28 @@
 const express = require("express");
 const router = express.Router();
 const pool = require("../db");
+const bcrypt = require('bcrypt');
 
-/*
- OWNER REGISTRATION
-*/
+const saltRounds = 10;
+
+// OWNER REGISTRATION
 router.post("/register", async (req, res) => {
   const { username, password, full_name, citizenship_no, district, mobile_no } = req.body;
 
   try {
-    // 1. Insert into users table
+    // Password hashing
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
+
     const userResult = await pool.query(
       `INSERT INTO users (username, password_hash, role)
        VALUES ($1, $2, 'OWNER')
        RETURNING user_id`,
-      [username, password] // password stored as password_hash for demo
+      [username, hashedPassword] 
     );
 
     const userId = userResult.rows[0].user_id;
 
-    // 2. Insert into vehicle_owners
+    // Insert into vehicle_owners
     const ownerResult = await pool.query(
       `INSERT INTO vehicle_owners (user_id, full_name, citizenship_no, district, mobile_no)
        VALUES ($1, $2, $3, $4, $5)
@@ -33,7 +36,7 @@ router.post("/register", async (req, res) => {
     });
 
   } catch (err) {
-    console.error(err);
+    console.error("Registration Error:", err);
     res.status(500).json({ error: "Registration failed" });
   }
 });
@@ -45,7 +48,7 @@ router.post("/login", async (req, res) => {
 
   try {
     const result = await pool.query(
-      "SELECT user_id, role FROM users WHERE username=$1",
+      "SELECT user_id, role, password_hash FROM users WHERE username=$1",
       [username]
     );
 
@@ -53,10 +56,22 @@ router.post("/login", async (req, res) => {
       return res.status(401).json({ error: "Invalid credentials" });
     }
 
-    res.json(result.rows[0]); // { user_id, role }
+    const user = result.rows[0];
+
+    // Compare provided password with the stored hash
+    const isMatch = await bcrypt.compare(password, user.password_hash);
+
+    if (!isMatch) {
+      return res.status(401).json({ error: "Invalid credentials" });
+    }
+
+    res.json({ 
+      user_id: user.user_id, 
+      role: user.role 
+    });
 
   } catch (err) {
-    console.error(err);
+    console.error("Login Error:", err);
     res.status(500).json({ error: "Login failed" });
   }
 });
