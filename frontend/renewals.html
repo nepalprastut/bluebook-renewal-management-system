@@ -77,7 +77,7 @@ async function loadRenewals() {
     }
 
     data.forEach(r => {
-      const paymentStatus = r.payment_date ? "PAID" : "PENDING";
+      const paymentStatus = r.status || "PENDING";
 
       table.innerHTML += `
         <tr>

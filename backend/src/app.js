@@ -28,6 +28,9 @@ app.use("/api/renewals", renewalRoutes);
 const authRoutes = require("./routes/auth");
 app.use("/api", authRoutes);
 
+const officerRoutes = require("./routes/officer");
+app.use("/api/officer", officerRoutes);
+
 const adminRoutes = require("./routes/admin");
 app.use("/api/admin", adminRoutes);
 

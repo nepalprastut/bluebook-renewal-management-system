@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Officer Dashboard</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<script>
+const role = sessionStorage.getItem("role");
+const officer_id = sessionStorage.getItem("user_id");
+
+if (role !== "OFFICER") {
+  window.location.replace("login.html");
+}
+</script>
+
+<nav>
+  <h2>Officer Panel</h2>
+  <a href="#" class="active">Pending Payments</a>
+</nav>
+
+<main>
+  <header>
+    <h1>Pending Payments</h1>
+  </header>
+
+  <div class="card">
+    <table>
+      <thead>
+        <tr>
+          <th>Plate No</th>
+          <th>Amount</th>
+          <th>Method</th>
+          <th>Date</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody id="paymentTable"></tbody>
+    </table>
+  </div>
+</main>
+
+<script>
+async function loadPending() {
+  const res = await fetch("/api/officer/pending");
+  const data = await res.json();
+
+  const table = document.getElementById("paymentTable");
+  table.innerHTML = "";
+
+  data.forEach(p => {
+    table.innerHTML += `
+      <tr>
+        <td>${p.plate_no}</td>
+        <td>Rs. ${p.amount}</td>
+        <td>${p.payment_method}</td>
+        <td>${new Date(p.payment_date).toLocaleDateString()}</td>
+        <td>
+          <button class="btn-primary"
+            onclick="approve(${p.payment_id})">
+            Approve
+          </button>
+        </td>
+      </tr>
+    `;
+  });
+}
+
+async function approve(id) {
+  await fetch(`/api/officer/approve/${id}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      officer_id: sessionStorage.getItem("user_id")
+    })
+  });
+
+  loadPending();
+}
+
+loadPending();
+</script>
+
+</body>
+</html>

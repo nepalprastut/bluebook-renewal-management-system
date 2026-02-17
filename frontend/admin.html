@@ -2,8 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Admin Dashboard - Search</title>
+  <title>Admin Dashboard - Bluebook System</title>
   <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <script>
     // AUTH GUARD: Ensure only ADMIN can stay here
     if (sessionStorage.getItem("role") !== "ADMIN") {
@@ -14,59 +15,172 @@
       window.location.replace("login.html");
     }
   </script>
+  <style>
+    /* Section specific styles */
+    .admin-section {
+      margin-bottom: 30px;
+    }
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+      margin-top: 15px;
+    }
+    .full-width {
+      grid-column: span 2;
+    }
+    .btn-delete {
+      background: var(--danger);
+      color: white;
+      border: none;
+      padding: 5px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.75rem;
+    }
+    #offMsg, #errorMsg {
+      margin-top: 10px;
+      font-weight: bold;
+      text-align: center;
+    }
+  </style>
 </head>
 <body>
 
 <nav>
   <h2>Bluebook Admin</h2>
-  <a href="javascript:void(0)" onclick="logout()" style="margin-left:auto; color:red;">Logout</a>
+  <a href="admin.html" class="active"><i class="fas fa-user-shield"></i> Admin Portal</a>
+  <a href="javascript:void(0)" onclick="logout()" style="margin-left:auto; color:red;"><i class="fas fa-sign-out-alt"></i> Logout</a>
 </nav>
 
 <main>
-  <center><h1>Admin Search Portal</h1></center>
-  
-  <div class="card" style="margin-bottom: 20px;">
-    <center><h3>Search Owner by Username</h3></center>
+  <header>
+    <h1>System Administration</h1>
+  </header>
+
+  <div class="card admin-section">
+    <h3><i class="fas fa-user-plus"></i> Create New Officer Account</h3>
+    <p class="subtitle">Register a new government officer to verify bluebook renewals.</p>
+    
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Full Name</label>
+        <input type="text" id="off_name" placeholder="E.g. Rajesh Hamal">
+      </div>
+      <div class="form-group">
+        <label>Username</label>
+        <input type="text" id="off_username" placeholder="E.g. officer_rajesh">
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="off_password" placeholder="••••••••">
+      </div>
+      <div class="form-group">
+        <label>Designation</label>
+        <input type="text" id="off_desig" placeholder="E.g. Senior Inspector">
+      </div>
+    </div>
+    
+    <button onclick="createOfficer()" class="btn-primary" style="margin-top: 10px; width: 200px;">
+      Register Officer
+    </button>
+    <p id="offMsg"></p>
+  </div>
+
+  <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 40px 0;">
+
+  <div class="card admin-section">
+    <h3><i class="fas fa-search"></i> Owner & Vehicle Lookup</h3>
+    <p class="subtitle">Search for a citizen to view their profile and vehicle status.</p>
     <div style="display: flex; gap: 10px;">
-      <input type="text" id="searchUser" placeholder="Enter owner username..." style="flex: 1; padding: 10px;">
-      <button onclick="searchOwner()" class="btn-primary">Search</button>
+      <input type="text" id="searchUser" placeholder="Enter owner username..." style="flex: 1;">
+      <button onclick="searchOwner()" class="btn-primary">Search User</button>
     </div>
   </div>
 
   <div id="resultArea" style="display: none;">
-    <div class="card" style="background: #f8fafc; margin-bottom: 20px;">
-      <h3>Owner Profile</h3>
-      <div id="profileInfo" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;"></div>
-    </div>
+    <div class="grid-container" style="display: grid; grid-template-columns: 1fr 1.5fr; gap: 20px;">
+      
+      <div class="card">
+        <h3>Owner Profile</h3>
+        <div id="profileInfo" style="line-height: 2.2;">
+          </div>
+      </div>
 
-    <div class="card">
-      <center><h3>Registered Vehicles</h3></center>
-      <table>
-        <thead>
-          <tr>
-            <th>Plate No</th>
-            <th>Type</th>
-            <th>Expiry Date</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody id="vehicleList"></tbody>
-      </table>
+      <div class="card">
+        <h3>Registered Vehicles</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Plate No</th>
+              <th>Type</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="vehicleList">
+             </tbody>
+        </table>
+      </div>
     </div>
   </div>
 
-  <p id="errorMsg" style="color: red; text-align: center;"></p>
+  <p id="errorMsg"></p>
 </main>
 
 <script>
+// --- FUNCTION: CREATE OFFICER ---
+async function createOfficer() {
+  const name = document.getElementById("off_name").value;
+  const user = document.getElementById("off_username").value;
+  const pass = document.getElementById("off_password").value;
+  const desig = document.getElementById("off_desig").value;
+  const msg = document.getElementById("offMsg");
+
+  if(!name || !user || !pass || !desig) {
+    msg.innerText = "Please fill all fields.";
+    msg.style.color = "red";
+    return;
+  }
+
+  try {
+    const res = await fetch("/api/admin/register-officer", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        full_name: name,
+        username: user,
+        password: pass,
+        designation: desig
+      })
+    });
+
+    const data = await res.json();
+    if (res.ok) {
+      msg.innerText = "Officer created successfully!";
+      msg.style.color = "green";
+      // Clear inputs
+      document.getElementById("off_name").value = "";
+      document.getElementById("off_username").value = "";
+      document.getElementById("off_password").value = "";
+      document.getElementById("off_desig").value = "";
+    } else {
+      msg.innerText = data.error || "Failed to create officer.";
+      msg.style.color = "red";
+    }
+  } catch (err) {
+    msg.innerText = "Server error.";
+    msg.style.color = "red";
+  }
+}
+
+// --- FUNCTION: SEARCH OWNER ---
 async function searchOwner() {
   const username = document.getElementById("searchUser").value;
   const resultArea = document.getElementById("resultArea");
   const errorMsg = document.getElementById("errorMsg");
 
   errorMsg.innerText = "";
-  resultArea.style.display = "none";
-
   if (!username) return;
 
   try {
@@ -74,14 +188,16 @@ async function searchOwner() {
     const data = await res.json();
 
     if (!res.ok) {
+      resultArea.style.display = "none";
       errorMsg.innerText = data.error;
+      errorMsg.style.color = "red";
       return;
     }
 
     // Populate Profile
     const profile = data.profile;
     document.getElementById("profileInfo").innerHTML = `
-      <p><strong>Name:</strong> ${profile.full_name}</p>
+      <p><strong>Full Name:</strong> ${profile.full_name}</p>
       <p><strong>Citizenship:</strong> ${profile.citizenship_no}</p>
       <p><strong>District:</strong> ${profile.district}</p>
       <p><strong>Mobile:</strong> ${profile.mobile_no}</p>
@@ -90,13 +206,19 @@ async function searchOwner() {
     // Populate Vehicles
     const vehicleTable = document.getElementById("vehicleList");
     vehicleTable.innerHTML = "";
+    
+    if(data.vehicles.length === 0) {
+        vehicleTable.innerHTML = "<tr><td colspan='4'>No vehicles registered.</td></tr>";
+    }
+
     data.vehicles.forEach(v => {
+      const statusClass = v.status === 'ACTIVE' ? 'status-active' : 'status-expired';
       vehicleTable.innerHTML += `
         <tr>
           <td>${v.plate_no}</td>
           <td>${v.vehicle_type}</td>
-          <td>${v.expiry_date ? v.expiry_date.split("T")[0] : "N/A"}</td>
-          <td><span class="status-pill ${v.status}">${v.status || "N/A"}</span></td>
+          <td><span class="status-pill ${statusClass}">${v.status || "N/A"}</span></td>
+          <td><button class="btn-delete" onclick="alert('Functionality to be implemented')">Delete</button></td>
         </tr>
       `;
     });

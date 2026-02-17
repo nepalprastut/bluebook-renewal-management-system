@@ -101,8 +101,14 @@ router.get("/owner/vehicles", async (req, res) => {
         v.plate_no, 
         v.vehicle_type, 
         b.expiry_date, 
-        b.status,
-        b.bluebook_id
+        b.status as bluebook_status,
+        b.bluebook_id,
+        -- This subquery finds the latest payment status for this bluebook
+        (SELECT p.status 
+         FROM payments p 
+         JOIN renewals r ON p.renewal_id = r.renewal_id 
+         WHERE r.bluebook_id = b.bluebook_id 
+         ORDER BY p.payment_id DESC LIMIT 1) as payment_status
       FROM users u
       JOIN vehicle_owners o ON u.user_id = o.user_id
       JOIN vehicles v ON o.owner_id = v.owner_id

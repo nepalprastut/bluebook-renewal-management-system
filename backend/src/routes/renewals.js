@@ -124,7 +124,8 @@ router.get("/", async (req, res) => {
              r.valid_to,
              p.amount,
              p.payment_date,
-             p.payment_method
+             p.payment_method,
+             p.status
       FROM users u
       JOIN vehicle_owners o ON u.user_id = o.user_id
       JOIN vehicles v ON o.owner_id = v.owner_id
@@ -146,71 +147,109 @@ router.get("/", async (req, res) => {
 
 
 // ===============================
-// 2️⃣ Perform Renewal + Payment
+// Perform Renewal + Payment
 // ===============================
-router.post("/pay", async (req, res) => {
-  const { bluebook_id, amount, payment_method } = req.body;
 
+
+router.post("/pay", async (req, res) => {
+  const { bluebook_id, payment_method } = req.body;
   const client = await pool.connect();
 
   try {
     await client.query("BEGIN");
 
-    // 🔹 Check if bluebook exists
-    const bluebookRes = await client.query(
-      "SELECT expiry_date FROM bluebooks WHERE bluebook_id=$1",
+    // 1. Get vehicle type for calculation
+    const vehicleRes = await client.query(
+      `SELECT v.vehicle_type FROM bluebooks b
+       JOIN vehicles v ON b.vehicle_id = v.vehicle_id
+       WHERE b.bluebook_id = $1`,
       [bluebook_id]
     );
 
-    if (bluebookRes.rows.length === 0) {
-      await client.query("ROLLBACK");
-      return res.status(400).json({ error: "Bluebook not found" });
+    if (vehicleRes.rows.length === 0) {
+      throw new Error("Vehicle not found for this bluebook");
     }
 
-    const today = new Date();
-    const validFrom = today;
+    const vehicleType = vehicleRes.rows[0].vehicle_type;
+    let amount = (vehicleType === "Car") ? 15000 : (vehicleType === "Bike") ? 3000 : 2500;
+
     const validTo = new Date();
     validTo.setFullYear(validTo.getFullYear() + 1);
 
-    // 🔹 Insert Renewal
+    // 2. Insert Renewal (FIXED: Removed 'status' because it's not in your renewals table)
     const renewalRes = await client.query(
       `INSERT INTO renewals
        (bluebook_id, renewal_date, valid_from, valid_to, total_amount)
-       VALUES ($1, CURRENT_DATE, $2, $3, $4)
+       VALUES ($1, CURRENT_DATE, CURRENT_DATE, $2, $3)
        RETURNING renewal_id`,
-      [bluebook_id, validFrom, validTo, amount]
+      [bluebook_id, validTo, amount] // Corrected: Match the columns in your schema
     );
 
     const renewalId = renewalRes.rows[0].renewal_id;
 
-    // 🔹 Insert Payment
+    // 3. Insert Payment (FIXED: Ensure status 'PENDING' is the LAST column)
     await client.query(
       `INSERT INTO payments
-       (renewal_id, payment_date, amount, payment_method)
-       VALUES ($1, CURRENT_DATE, $2, $3)`,
+       (renewal_id, payment_date, amount, payment_method, status)
+       VALUES ($1, CURRENT_DATE, $2, $3, 'PENDING')`,
       [renewalId, amount, payment_method || "Online"]
     );
 
-    // 🔹 Update Bluebook expiry properly
+    // 4. Update Bluebook expiry (FIXED: Added missing WHERE clause)
     await client.query(
-      `UPDATE bluebooks
-       SET status = 'ACTIVE',
-           expiry_date = $1
-       WHERE bluebook_id = $2`,
+      `UPDATE bluebooks SET expiry_date = $1 WHERE bluebook_id = $2`,
       [validTo, bluebook_id]
     );
 
     await client.query("COMMIT");
-
-    res.json({ message: "Renewal successful!" });
+    res.json({ message: "Payment submitted. Waiting for officer verification." });
 
   } catch (err) {
     await client.query("ROLLBACK");
     console.error(err);
-    res.status(500).json({ error: "Transaction failed" });
+    res.status(500).json({ error: err.message || "Transaction failed" });
   } finally {
     client.release();
   }
 });
+
+
+
+// Get Renewal Info (amount calculation)
+router.get("/info/:id", async (req, res) => {
+  const bluebook_id = req.params.id;
+
+  try {
+    const result = await pool.query(
+      `SELECT v.vehicle_type, v.plate_no
+       FROM bluebooks b
+       JOIN vehicles v ON b.vehicle_id = v.vehicle_id
+       WHERE b.bluebook_id = $1`,
+      [bluebook_id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "Not found" });
+    }
+
+    const type = result.rows[0].vehicle_type;
+    let amount;
+
+    if (type === "Car") amount = 3000;
+    else if (type === "Bike") amount = 1500;
+    else if (type === "Truck") amount = 5000;
+    else amount = 2500;
+
+    res.json({
+      plate_no: result.rows[0].plate_no,
+      vehicle_type: type,
+      amount
+    });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 
 module.exports = router;

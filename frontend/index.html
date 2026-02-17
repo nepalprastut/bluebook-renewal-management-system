@@ -8,7 +8,6 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
   <script>
-    // Prevent unauthorized access
     function checkAuth() {
       const role = sessionStorage.getItem("role");
       if (!role || role !== "OWNER") {
@@ -17,50 +16,30 @@
     }
     checkAuth();
 
-    // Logout
     function logout() {
       sessionStorage.clear();
       window.location.replace("login.html");
     }
-
-    // Prevents back-button access after logout
-    window.onpageshow = function (event) {
-      if (event.persisted) {
-        window.location.reload();
-      }
-    };
   </script>
 
   <style>
-    /* Status and Button Styles */
     .btn-renew {
       background-color: #2563eb;
       color: white;
       border: none;
-      padding: 5px 10px;
+      padding: 6px 12px;
       border-radius: 4px;
       cursor: pointer;
       font-size: 0.85rem;
     }
-
-    .btn-renew:hover {
-      background-color: #1d4ed8;
-    }
-
-    .status-active {
-      color: #16a34a;
-      font-weight: bold;
-    }
-
-    .status-expired {
-      color: #dc2626;
-      font-weight: bold;
-    }
+    .status-active { color: #16a34a; font-weight: bold; }
+    .status-expired { color: #dc2626; font-weight: bold; }
+    /* New style for Pending verification */
+    .status-pending { color: #f59e0b; font-weight: bold; font-style: italic; }
   </style>
 </head>
 
 <body>
-
   <nav>
     <h2>Bluebook Renewal</h2>
     <a href="index.html" class="active"><i class="fas fa-car"></i> Vehicles</a>
@@ -84,7 +63,7 @@
         <p id="activeCount" style="color: #16a34a">0</p>
       </div>
       <div class="stat-card">
-        <h3>Expired</h3>
+        <h3>Expired / Pending</h3>
         <p id="alertCount" style="color: #dc2626">0</p>
       </div>
     </div>
@@ -112,33 +91,41 @@
       try {
         const res = await fetch(`/api/owner/vehicles?user_id=${user_id}`);
         const data = await res.json();
-
         const table = document.getElementById("vehicleTable");
         table.innerHTML = "";
 
         let total = data.length, active = 0, expired = 0;
 
         data.forEach(v => {
-          // const isExpired = v.status === 'EXPIRED';
           const today = new Date();
           const expiry = new Date(v.expiry_date);
           const isExpired = expiry < today;
 
-          if (isExpired) expired++; else active++;
+          let statusHtml = "";
 
-          const actionContent = isExpired
-            ? `<button onclick="goToPayment(${v.bluebook_id})" class="btn-renew">Renew</button>`
-            : `<span class="status-active">ACTIVE</span>`;
+          // Check for pending payment status first
+          if (v.payment_status === 'PENDING') {
+            statusHtml = `<span class="status-pending"><i class="fas fa-clock"></i> PENDING VERIFICATION</span>`;
+            expired++; 
+          } 
+          else if (isExpired) {
+            statusHtml = `<button onclick="goToPayment(${v.bluebook_id})" class="btn-renew">Renew Now</button>`;
+            expired++;
+          } 
+          else {
+            statusHtml = `<span class="status-active">ACTIVE</span>`;
+            active++;
+          }
 
           table.innerHTML += `
-        <tr>
-          <td>${v.full_name || "N/A"}</td>
-          <td>${v.plate_no}</td>
-          <td>${v.vehicle_type}</td>
-          <td>${v.expiry_date ? v.expiry_date.split("T")[0] : "N/A"}</td>
-          <td>${actionContent}</td>
-        </tr>
-      `;
+            <tr>
+              <td>${v.full_name || "N/A"}</td>
+              <td>${v.plate_no}</td>
+              <td>${v.vehicle_type}</td>
+              <td>${v.expiry_date ? v.expiry_date.split("T")[0] : "N/A"}</td>
+              <td>${statusHtml}</td>
+            </tr>
+          `;
         });
 
         document.getElementById("totalCount").innerText = total;
@@ -153,9 +140,7 @@
       window.location.href = `payment.html?bluebook_id=${bluebookId}`;
     }
 
-
     loadVehicles();
   </script>
 </body>
-
 </html>
