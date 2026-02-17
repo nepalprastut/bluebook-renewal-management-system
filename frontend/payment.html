@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Bluebook Payment</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+
+<script>
+  const user_id = sessionStorage.getItem("user_id");
+  const role = sessionStorage.getItem("role");
+
+  if (!user_id || role !== "OWNER") {
+    window.location.replace("login.html");
+  }
+
+  function logout() {
+    sessionStorage.clear();
+    window.location.replace("login.html");
+  }
+</script>
+
+<nav>
+  <h2>Bluebook Renewal</h2>
+  <a href="index.html"><i class="fas fa-car"></i> Vehicles</a>
+  <a href="renewals.html"><i class="fas fa-history"></i> Renewal History</a>
+  <a href="#" class="active"><i class="fas fa-credit-card"></i> Payment</a>
+  <a href="javascript:void(0)" onclick="logout()" style="margin-left:auto; color:red;">Logout</a>
+</nav>
+
+<main>
+
+  <header>
+    <h1>Renew Bluebook</h1>
+  </header>
+
+  <div class="form-page">
+    <div class="form-container card">
+
+      <div class="form-group">
+        <label>Bluebook ID</label>
+        <input type="text" id="bbid" readonly>
+      </div>
+
+      <div class="form-group">
+        <label>Renewal Amount</label>
+        <input type="text" value="Rs. 2500" readonly>
+      </div>
+
+      <div class="form-group">
+        <label>Payment Method</label>
+        <select id="paymentMethod">
+          <option value="Online">Online</option>
+          <option value="Cash">Cash</option>
+        </select>
+      </div>
+
+      <button class="btn-primary" onclick="makePayment()">Confirm Payment</button>
+
+      <div id="msg" class="msg"></div>
+
+    </div>
+  </div>
+
+</main>
+
+<script>
+const params = new URLSearchParams(window.location.search);
+const bluebookId = params.get("bluebook_id");
+
+document.getElementById("bbid").value = bluebookId;
+
+async function makePayment() {
+  const method = document.getElementById("paymentMethod").value;
+  const msg = document.getElementById("msg");
+
+  msg.style.display = "none";
+
+  try {
+    const res = await fetch("/api/renewals/pay", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        bluebook_id: bluebookId,
+        amount: 2500,
+        payment_method: method
+      })
+    });
+
+    const result = await res.json();
+
+    if (res.ok) {
+      msg.className = "msg success";
+      msg.innerText = "Payment Successful! Redirecting...";
+      msg.style.display = "block";
+
+      setTimeout(() => {
+        window.location.href = "renewals.html";
+      }, 1500);
+
+    } else {
+      msg.className = "msg error";
+      msg.innerText = result.error;
+      msg.style.display = "block";
+    }
+
+  } catch (err) {
+    msg.className = "msg error";
+    msg.innerText = "Server error occurred.";
+    msg.style.display = "block";
+  }
+}
+</script>
+
+</body>
+</html>

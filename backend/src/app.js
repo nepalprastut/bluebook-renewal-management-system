@@ -23,7 +23,7 @@ const vehicleRoutes = require("./routes/vehicles");
 app.use("/api", vehicleRoutes);
 
 const renewalRoutes = require("./routes/renewals");
-app.use("/api", renewalRoutes);
+app.use("/api/renewals", renewalRoutes);
 
 const authRoutes = require("./routes/auth");
 app.use("/api", authRoutes);
