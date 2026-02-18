@@ -62,11 +62,64 @@ button:disabled { background: #94a3b8; cursor: not-allowed; opacity: 0.7; }
 .pill-rejected { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
 
 /* Modal System (Officer Inspection) - RESTORED & FIXED */
-.modal { display: none; position: fixed; inset: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(8px); z-index: 9999; justify-content: center; align-items: center; padding: 20px; }
-.inspection-modal { background: white; width: 100%; max-width: 850px; border-radius: 20px; display: flex; flex-direction: column; overflow: hidden; animation: modalPop 0.25s ease-out; }
-.inspection-body { display: grid; grid-template-columns: 1fr 1.2fr; }
-.info-section { padding: 30px; border-right: 1px solid var(--border); }
-.verification-section { padding: 30px; background: #fcfcfc; }
+.modal {
+    display: none; 
+    position: fixed; 
+    inset: 0; 
+    background: rgba(15, 23, 42, 0.8); /* Darker backdrop */
+    backdrop-filter: blur(4px);
+    z-index: 9999;
+    padding: 20px;
+    align-items: center;
+    justify-content: center;
+}
+
+.inspection-modal {
+    background: white;
+    width: 95%;
+    max-width: 900px;
+    border-radius: 16px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.inspection-header {
+    padding: 20px 30px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.inspection-body {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* Two column layout */
+    gap: 0;
+}
+
+
+.info-section {
+    padding: 30px;
+    background: #f8fafc;
+    border-right: 1px solid var(--border);
+}
+
+.verification-section {
+    padding: 30px;
+    background: white;
+}
+
+.payment-card {
+    text-align: center;
+    padding: 40px;
+}
+.payment-card i {
+    font-size: 50px;
+    color: #22c55e;
+    margin-bottom: 20px;
+}
 
 /* Custom Checklist Checkbox - RESTORED */
 .check-container { display: block; position: relative; padding-left: 35px; cursor: pointer; font-size: 14px; margin-bottom: 15px; }
@@ -118,4 +171,91 @@ body:not(:has(nav)) main { margin-left: 0; width: 100%; padding: 0; }
 /* Navbar tile icon for prices */
 .nav-tile .tile-icon i.fa-hand-holding-usd {
     font-size: 28px;
+}
+
+/* --- OFFICER INSPECTION ENHANCEMENTS --- */
+.inspection-modal h2 { margin-bottom: 5px; color: var(--text-main); }
+.info-block { margin-bottom: 25px; }
+.info-block h4 { 
+    font-size: 0.75rem; 
+    text-transform: uppercase; 
+    color: var(--text-muted); 
+    margin-bottom: 12px; 
+    display: flex; 
+    align-items: center; 
+    gap: 8px; 
+}
+.info-block p { margin-bottom: 8px; font-size: 0.95rem; }
+.info-block strong { font-weight: 500; color: var(--text-muted); min-width: 80px; display: inline-block; }
+
+.checklist { background: #f8fafc; padding: 20px; border-radius: 12px; border: 1px solid var(--border); }
+.btn-approve-full { background: #16a34a; color: white; border: none; padding: 14px; border-radius: 8px; font-weight: 700; cursor: pointer; width: 100%; transition: 0.2s; }
+.btn-approve-full:hover { background: #15803d; }
+.btn-reject-text { background: transparent; color: #dc2626; border: none; padding: 10px; cursor: pointer; width: 100%; font-weight: 600; margin-top: 10px; }
+
+/* --- PAYMENT SUCCESS MODAL --- */
+.success-card {
+    background: white;
+    padding: 40px;
+    border-radius: 20px;
+    text-align: center;
+    max-width: 450px;
+    width: 90%;
+    box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
+}
+.success-icon-large {
+    width: 80px;
+    height: 80px;
+    background: #dcfce7;
+    color: #16a34a;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 40px;
+    margin: 0 auto 20px;
+}
+.receipt-summary {
+    background: #f1f5f9;
+    padding: 20px;
+    border-radius: 12px;
+    margin: 20px 0;
+    text-align: left;
+}
+.receipt-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.9rem; }
+.receipt-row span:first-child { color: var(--text-muted); }
+.receipt-row span:last-child { font-weight: 600; }
+
+/* --- FIXED CLOSE BUTTON --- */
+.close-btn {
+    background: #f1f5f9;
+    border: none;
+    font-size: 1.25rem; /* Appropriate size */
+    font-weight: 700;
+    color: #64748b;
+    cursor: pointer;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s;
+    line-height: 1;
+    padding: 0; /* Prevents button bloat */
+}
+
+.close-btn:hover {
+    background: #e2e8f0;
+    color: #1e293b;
+    transform: rotate(90deg); /* Subtle professional touch */
+}
+
+/* Ensure header doesn't squash the button */
+.inspection-header {
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }

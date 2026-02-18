@@ -45,23 +45,23 @@
 
   <div id="inspectModal" class="modal">
     <div class="inspection-modal">
-      <div class="modal-header">
-        <div>
-            <h2 id="m_plate" style="margin:0;">Inspection</h2>
-            <span id="m_type_badge" class="status-pill pill-pending">Type</span>
-        </div>
-        <button onclick="closeModal()" class="close-btn">&times;</button>
+      <div class="inspection-header">
+          <div>
+              <h2 id="m_plate">Inspection</h2>
+              <span id="m_type_badge" class="status-pill pill-pending">Type</span>
+          </div>
+          <button onclick="closeModal()" class="close-btn">&times;</button>
       </div>
 
       <div class="inspection-body">
         <div class="info-section">
           <div class="info-block">
-            <h4 style="margin-top:0;"><i class="fas fa-user-circle"></i> Owner Details</h4>
+            <h4><i class="fas fa-user-circle"></i> Owner Details</h4>
             <p><strong>Name:</strong> <span id="m_owner"></span></p>
-            <p><strong>Citizenship:</strong> <span id="m_citizen"></span></p>
+            <p><strong>ID:</strong> <span id="m_citizen"></span></p>
             <p><strong>Contact:</strong> <span id="m_mobile"></span></p>
           </div>
-          <div class="info-block" style="margin-top:25px;">
+          <div class="info-block">
             <h4><i class="fas fa-tools"></i> Technical Specs</h4>
             <p><strong>Engine:</strong> <span id="m_engine"></span></p>
             <p><strong>Chassis:</strong> <span id="m_chassis"></span></p>
@@ -69,28 +69,28 @@
         </div>
 
         <div class="verification-section">
-          <h4 style="margin-top:0;"><i class="fas fa-file-signature"></i> Compliance Checklist</h4>
+          <h4><i class="fas fa-file-signature"></i> Checklist</h4>
           <div class="checklist">
             <label class="check-container">
               <input type="checkbox" id="c1"> <span class="checkmark"></span>
-              Insurance validity matches vehicle IDs
+              Identity & Vehicle Match
             </label>
             <label class="check-container">
               <input type="checkbox" id="c2"> <span class="checkmark"></span>
-              Tax bracket matches vehicle category
+              Payment Verification
             </label>
             <label class="check-container">
               <input type="checkbox" id="c3"> <span class="checkmark"></span>
-              Central registry plate verification
+              Registry Clearance
             </label>
           </div>
 
           <div id="rejectionArea" style="display: none; margin-top: 15px;">
-            <textarea id="rej_reason" rows="3" style="width:100%; padding:10px; border-radius:8px; border:1px solid #fecaca;" placeholder="Reason for rejection..."></textarea>
+            <textarea id="rej_reason" rows="3" placeholder="Reason for rejection..."></textarea>
             <button onclick="submitReject()" class="btn-approve-full" style="background:#dc2626; margin-top:10px;">Confirm Rejection</button>
           </div>
 
-          <div class="action-footer" id="mainBtns" style="margin-top:20px;">
+          <div id="mainBtns" style="margin-top:20px;">
             <button class="btn-approve-full" onclick="submitApprove()">Approve Renewal</button>
             <button class="btn-reject-text" onclick="showRejection()">Reject Request</button>
           </div>
@@ -114,7 +114,7 @@
         <tr>
           <td><strong>${p.plate_no}</strong></td>
           <td>${p.full_name}</td>
-          <td>${p.vehicle_type}</td>
+          <td>${p.vehicle_type || 'Vehicle'}</td>
           <td>Rs. ${p.amount}</td>
           <td style="text-align: center;">
             <button class="btn-primary" style="width:auto; padding:6px 15px;" onclick="openInspect(${p.payment_id})">Inspect</button>
@@ -150,14 +150,14 @@
     function showRejection() { document.getElementById("rejectionArea").style.display = "block"; document.getElementById("mainBtns").style.display = "none"; }
 
     async function submitApprove() {
-      if (!document.getElementById("c1").checked || !document.getElementById("c2").checked || !document.getElementById("c3").checked) return alert("Check all boxes!");
+      if (!document.getElementById("c1").checked || !document.getElementById("c2").checked || !document.getElementById("c3").checked) return alert("Please check all boxes.");
       await fetch(`/api/officer/approve/${activeId}`, { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({officer_id}) });
       closeModal(); loadPending();
     }
 
     async function submitReject() {
       const reason = document.getElementById("rej_reason").value;
-      if(!reason) return alert("Reason required");
+      if(!reason) return alert("Please provide a reason.");
       await fetch(`/api/officer/reject/${activeId}`, { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({officer_id, reason}) });
       closeModal(); loadPending();
     }

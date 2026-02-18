@@ -23,17 +23,17 @@
 
       <div class="card" style="padding: 32px;">
         <div style="background: #f8fafc; padding: 20px; border-radius: 12px; margin-bottom: 24px;">
-            <p style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Plate Number</p>
+            <p style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Vehicle Plate</p>
             <p id="display_plate" style="font-size: 1.2rem; font-weight: 700; margin-bottom: 15px;">Loading...</p>
             
-            <p style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Amount Due</p>
+            <p style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Total Tax Amount</p>
             <p id="display_amount" style="font-size: 1.5rem; font-weight: 800; color: var(--primary);">Rs. 0.00</p>
         </div>
 
-        <label>Payment Method</label>
+        <label style="font-size: 0.85rem; font-weight: 600;">Payment Gateway</label>
         <select id="paymentMethod">
-          <option value="Online">Online Banking / Wallet</option>
-          <option value="Cash">Cash (Counter Visit)</option>
+          <option value="Online">eSewa / Khalti / Mobile Banking</option>
+          <option value="Cash">Cash at Department Counter</option>
         </select>
 
         <button onclick="makePayment()" style="margin-top: 10px;">Confirm & Pay</button>
@@ -42,46 +42,38 @@
   </main>
 
   <div id="successModal" class="modal">
-    <div class="modal-content">
-      <div class="success-icon"><i class="fas fa-check-circle"></i></div>
-      <h2>Payment Submitted!</h2>
-      <p>An officer will verify your renewal within 24 hours. You can track progress in your history.</p>
-      <button onclick="window.location.href='renewals.html'" style="width: auto; padding: 10px 30px;">Go to History</button>
+    <div class="success-card">
+      <div class="success-icon-large"><i class="fas fa-check"></i></div>
+      <h2>Request Submitted</h2>
+      <p>Your payment has been logged. An officer will verify your details shortly.</p>
+      
+      <div class="receipt-summary">
+        <div class="receipt-row"><span>Status</span><span style="color:#ca8a04;">UNDER REVIEW</span></div>
+        <div class="receipt-row"><span>Estimated Time</span><span>24-48 Hours</span></div>
+      </div>
+
+      <button onclick="window.location.href='renewals.html'" style="width: 100%;">View History</button>
     </div>
   </div>
 
  <script>
-    // 1. Get the ID from the URL
     const params = new URLSearchParams(window.location.search);
     const bluebookId = params.get("bluebook_id");
 
-    // 2. Guard: If no ID, send them back to the dashboard
-    if (!bluebookId || bluebookId === "null" || bluebookId === "undefined") {
-        console.error("No Bluebook ID provided in URL");
-        window.location.replace("index.html");
-    }
+    if (!bluebookId || bluebookId === "null") window.location.replace("index.html");
 
     async function loadInfo() {
         try {
             const res = await fetch(`/api/renewals/info/${bluebookId}`);
-            
-            if (!res.ok) throw new Error("Vehicle info not found");
-            
             const data = await res.json();
-            
-            // Update the UI
             document.getElementById("display_plate").innerText = data.plate_no;
             document.getElementById("display_amount").innerText = `Rs. ${data.amount}`;
-        } catch (err) {
-            console.error("Error loading info:", err);
-            document.getElementById("display_plate").innerText = "Error loading data";
-        }
+        } catch (err) { console.error(err); }
     }
 
     async function makePayment() {
         const btn = document.querySelector('button');
-        btn.disabled = true;
-        btn.innerText = "Processing...";
+        btn.disabled = true; btn.innerText = "Processing...";
 
         try {
             const res = await fetch('/api/renewals/pay', {
@@ -92,25 +84,15 @@
                     payment_method: document.getElementById("paymentMethod").value
                 })
             });
-
-            const data = await res.json();
-
             if (res.ok) {
-                document.getElementById("successModal").style.display = "block";
+                document.getElementById("successModal").style.display = "flex";
             } else {
-                alert(data.error || "Payment failed");
-                btn.disabled = false;
-                btn.innerText = "Confirm & Pay";
+                alert("Payment failed"); btn.disabled = false; btn.innerText = "Confirm & Pay";
             }
-        } catch (err) {
-            alert("Server error. Please try again.");
-            btn.disabled = false;
-            btn.innerText = "Confirm & Pay";
-        }
+        } catch (err) { btn.disabled = false; }
     }
 
     function logout() { sessionStorage.clear(); window.location.replace("login.html"); }
-
     loadInfo();
 </script>
 </body>

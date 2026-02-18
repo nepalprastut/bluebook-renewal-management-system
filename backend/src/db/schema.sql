@@ -179,4 +179,15 @@ ALTER TABLE payments ADD COLUMN rejection_reason TEXT;
 
 SELECT expiry_date FROM bluebooks WHERE bluebook_id = 20;
 
+CREATE TABLE tax_prices (
+	id SERIAL PRIMARY KEY,
+	vehicle_type VARCHAR(50) UNIQUE NOT NULL,
+	base_price NUMERIC(10, 2) NOT NULL
+);
 
+INSERT INTO tax_prices (vehicle_type, base_price) VALUES 
+('Scooter', 2500),
+('Bike', 3000),
+('Car', 15000),
+('Truck', 35000),
+('Bus', 25000);

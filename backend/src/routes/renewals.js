@@ -9,6 +9,12 @@ const pool = require("../db");
 // ============================================================
 router.get("/", async (req, res) => {
   const { user_id } = req.query;
+  
+  // FIX: Guard against string "null" or missing ID
+  if (!user_id || user_id === "null" || isNaN(parseInt(user_id))) {
+    return res.status(400).json({ error: "A valid User ID is required" });
+  }
+
   try {
     const query = `
       SELECT v.plate_no, r.renewal_date, p.amount, p.status, 
@@ -29,7 +35,7 @@ router.get("/", async (req, res) => {
       )
       ORDER BY p.payment_date DESC`;
 
-    const result = await pool.query(query, [user_id]);
+    const result = await pool.query(query, [parseInt(user_id)]);
     res.json(result.rows);
   } catch (err) {
     console.error("History Error:", err);

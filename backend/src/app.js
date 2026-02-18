@@ -18,6 +18,11 @@ app.use(express.static(path.join(__dirname, "../../frontend")));
 //   res.json(result.rows);
 // });
 
+app.use((req, res, next) => {
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+    next();
+});
+
 // -------------------- API ROUTES --------------------
 const vehicleRoutes = require("./routes/vehicles");
 app.use("/api", vehicleRoutes);
@@ -33,6 +38,7 @@ app.use("/api/officer", officerRoutes);
 
 const adminRoutes = require("./routes/admin");
 app.use("/api/admin", adminRoutes);
+
 
 // -------------------- START SERVER --------------------
 app.listen(3000, () => {

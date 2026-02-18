@@ -50,12 +50,71 @@
         </div>
 
         <div style="margin-top: 35px; border-top: 1px solid #f1f5f9; padding-top: 25px;">
-            <button onclick="createOfficer()" class="btn-primary" style="width: 100%; height: 50px; font-size: 16px;">
+            <button id="createBtn" onclick="createOfficer()" class="btn-primary" style="width: 100%; height: 50px; font-size: 16px;">
                 <i class="fas fa-user-plus"></i> Create Officer Account
             </button>
             <p id="offMsg" style="margin-top: 20px; text-align: center; font-weight: 600; min-height: 24px;"></p>
         </div>
     </div>
   </main>
+
+  <script>
+    // 1. Security Guard
+    if (sessionStorage.getItem("role") !== "ADMIN") {
+        window.location.replace("login.html");
+    }
+
+    // 2. Create Officer Logic
+    async function createOfficer() {
+        const full_name = document.getElementById("off_name").value;
+        const designation = document.getElementById("off_desig").value;
+        const username = document.getElementById("off_username").value;
+        const password = document.getElementById("off_password").value;
+        const msg = document.getElementById("offMsg");
+        const btn = document.getElementById("createBtn");
+
+        // Validation
+        if (!full_name || !designation || !username || !password) {
+            msg.style.color = "#ef4444";
+            msg.innerText = "Error: All fields are required.";
+            return;
+        }
+
+        btn.disabled = true;
+        btn.innerText = "Creating...";
+
+        try {
+            const res = await fetch("/api/admin/register-officer", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ username, password, full_name, designation })
+            });
+
+            const data = await res.json();
+
+            if (res.ok) {
+                msg.style.color = "#16a34a";
+                msg.innerText = "Success: " + data.message;
+                // Clear form
+                document.querySelectorAll('input').forEach(i => i.value = '');
+            } else {
+                msg.style.color = "#ef4444";
+                msg.innerText = "Error: " + (data.error || "Failed to create officer");
+            }
+        } catch (err) {
+            msg.style.color = "#ef4444";
+            msg.innerText = "Server error. Please check your connection.";
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-user-plus"></i> Create Officer Account';
+        }
+    }
+
+    // 3. Logout Logic
+    function logout() {
+        sessionStorage.clear();
+        window.location.replace("login.html");
+    }
+  </script>
 </body>
 </html>

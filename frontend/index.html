@@ -28,12 +28,10 @@
     <h3>Total Vehicles</h3>
     <p id="totalVehicles">0</p>
   </div>
-
   <div class="stat-card">
     <h3>Active</h3>
-    <p id="activeRenewals" style="color: var(--primary);">0</p>
+    <p id="activeVehicles" style="color: var(--primary);">0</p>
   </div>
-
   <div class="stat-card">
     <h3>Action Required</h3>
     <p id="actionRequired" style="color: #ef4444;">0</p>
@@ -63,6 +61,15 @@
     if (!user_id || user_id === "null" || role !== "OWNER") {
       window.location.replace("login.html");
     }
+
+    async function loadDashboard() {
+  const res = await fetch('/api/owner/stats'); // Ensure this route exists
+  const data = await res.json();
+  
+  document.getElementById('totalVehicles').innerText = data.total || 0;
+  document.getElementById('activeVehicles').innerText = data.active || 0;
+  document.getElementById('actionRequired').innerText = data.pending || 0;
+}
 
     async function loadVehicles() {
       try {
@@ -110,9 +117,9 @@
           </tr>`;
         });
 
-        document.getElementById("totalCount").innerText = counts.total;
-        document.getElementById("activeCount").innerText = counts.active;
-        document.getElementById("alertCount").innerText = counts.alert;
+        document.getElementById("totalVehicles").innerText = counts.total;
+        document.getElementById("activeVehicles").innerText = counts.active;
+        document.getElementById("actionRequired").innerText = counts.alert;
 
       } catch (err) {
         console.error("Error loading vehicles:", err);
