@@ -49,46 +49,32 @@ router.post("/vehicles", async (req, res) => {
 
 
 // LIST VEHICLES
-router.get("/", async (req, res) => {
-  const result = await pool.query(`
-    SELECT o.full_name, v.plate_no, v.vehicle_type, b.expiry_date, b.status
-    FROM vehicle_owners o
-    JOIN vehicles v ON o.owner_id = v.owner_id
-    LEFT JOIN bluebooks b ON v.vehicle_id = b.vehicle_id
-  `);
-  res.json(result.rows);
-});
-
 router.get("/owner/vehicles", async (req, res) => {
   const { user_id } = req.query;
 
-  try {
-    const result = await pool.query(`
-      SELECT 
-        o.full_name, 
-        v.plate_no, 
-        v.vehicle_type, 
-        b.expiry_date, 
-        b.status as bluebook_status,
-        b.bluebook_id,
-        -- This subquery finds the latest payment status for this bluebook
-        (SELECT p.status 
-         FROM payments p 
-         JOIN renewals r ON p.renewal_id = r.renewal_id 
-         WHERE r.bluebook_id = b.bluebook_id 
-         ORDER BY p.payment_id DESC LIMIT 1) as payment_status
-      FROM users u
-      JOIN vehicle_owners o ON u.user_id = o.user_id
-      JOIN vehicles v ON o.owner_id = v.owner_id
-      LEFT JOIN bluebooks b ON v.vehicle_id = b.vehicle_id
-      WHERE u.user_id = $1
-    `, [user_id]);
+  // 1. CRITICAL GUARD: Stop the "null" string from reaching the DB
+  if (!user_id || user_id === "null" || user_id === "undefined") {
+    console.error("Blocked invalid user_id query");
+    return res.status(400).json({ error: "User ID is required" });
+  }
 
+  try {
+    const result = await pool.query(
+      `SELECT v.*, b.bluebook_id, b.expiry_date, 
+       (SELECT p.status FROM payments p 
+        JOIN renewals r ON p.renewal_id = r.renewal_id 
+        WHERE r.bluebook_id = b.bluebook_id 
+        ORDER BY p.payment_id DESC LIMIT 1) as latest_payment_status
+       FROM vehicles v
+       JOIN bluebooks b ON v.vehicle_id = b.vehicle_id
+       JOIN vehicle_owners o ON v.owner_id = o.owner_id
+       WHERE o.user_id = $1::int`, // Cast to int here too
+      [user_id]
+    );
     res.json(result.rows);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Failed to fetch vehicles" });
+    console.error("Database Error in vehicles.js:", err.message);
+    res.status(500).json({ error: "Internal Server Error" });
   }
 });
-
 module.exports = router;

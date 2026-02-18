@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>User Lookup - Admin</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+  <nav>
+    <h2>Admin.</h2>
+    <a href="admin.html"><i class="fas fa-chart-line"></i> Dashboard</a>
+    <a href="admin_users.html" class="active"><i class="fas fa-users"></i> Manage Users</a>
+    <a href="admin_officers.html"><i class="fas fa-user-tie"></i> Manage Officers</a>
+    <a href="javascript:void(0)" onclick="logout()" style="margin-top: auto; color: #f87171;"><i class="fas fa-sign-out-alt"></i> Logout</a>
+  </nav>
+
+  <main>
+    <header style="margin-bottom: 30px;">
+        <a href="admin.html" class="back-link"><i class="fas fa-chevron-left"></i> Back to Hub</a>
+        <h1 style="margin-top:10px;">Citizen Database</h1>
+    </header>
+
+    <div class="card" style="padding: 25px; margin-bottom: 30px;">
+        <div style="display: flex; gap: 15px;">
+            <input type="text" id="searchUser" placeholder="Enter username..." style="flex: 1;">
+            <button onclick="searchOwner()" class="btn-primary" style="width: auto; padding: 0 30px;">Search</button>
+        </div>
+        <p id="errorMsg" style="color: red; margin-top: 10px;"></p>
+    </div>
+
+    <div id="resultArea" style="display: none;">
+        <div style="display: grid; grid-template-columns: 320px 1fr; gap: 25px;">
+            <div class="card">
+                <h3 id="prof_name">User Name</h3>
+                <p id="prof_username" style="color: var(--text-muted); margin-bottom: 20px;">@username</p>
+                <div id="profileDetails" class="profile-data"></div>
+            </div>
+
+            <div class="card">
+                <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
+                    <h3>Assets</h3>
+                    <span id="vehicleCount" class="nav-badge" style="position:static;">0 Found</span>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Plate No</th>
+                            <th>Type</th>
+                            <th>Status</th>
+                            <th style="text-align: right;">Action</th> 
+                        </tr>
+                    </thead>
+                    <tbody id="vehicleList"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+  </main>
+
+  <script>
+    if (sessionStorage.getItem("role") !== "ADMIN") window.location.replace("login.html");
+
+    async function searchOwner() {
+      const username = document.getElementById("searchUser").value;
+      const errorMsg = document.getElementById("errorMsg");
+      const resultArea = document.getElementById("resultArea");
+
+      errorMsg.innerText = "";
+      
+      try {
+        const res = await fetch(`/api/admin/search-owner?username=${username}`);
+        const data = await res.json();
+        
+        if (!res.ok) {
+          errorMsg.innerText = data.error || "User not found";
+          resultArea.style.display = "none";
+          return;
+        }
+
+        // Profile Info
+        document.getElementById("prof_name").innerText = data.profile.full_name;
+        document.getElementById("prof_username").innerText = `@${username}`;
+        document.getElementById("profileDetails").innerHTML = `
+          <p><strong>Citizenship:</strong> ${data.profile.citizenship_no}</p>
+          <p><strong>Mobile:</strong> ${data.profile.mobile_no}</p>
+          <p><strong>District:</strong> ${data.profile.district}</p>`;
+
+        // Vehicles List with Delete Action
+        document.getElementById("vehicleCount").innerText = data.vehicles.length + " Found";
+        document.getElementById("vehicleList").innerHTML = data.vehicles.map(v => `
+          <tr>
+            <td><strong>${v.plate_no}</strong></td>
+            <td>${v.vehicle_type}</td>
+            <td><span class="status-pill ${v.status==='ACTIVE'?'pill-approved':'pill-pending'}">${v.status || 'EXPIRED'}</span></td>
+            <td style="text-align: right;">
+                <button class="btn-delete" onclick="deleteVehicle(${v.vehicle_id})">
+                    <i class="fas fa-trash"></i> Delete
+                </button>
+            </td>
+          </tr>
+        `).join('');
+
+        resultArea.style.display = "block";
+      } catch (err) {
+        errorMsg.innerText = "Connection error.";
+      }
+    }
+
+    async function deleteVehicle(vehicleId) {
+        if (!confirm("Are you sure you want to permanently delete this vehicle? This will also remove related payment records.")) return;
+
+        try {
+            const res = await fetch(`/api/admin/delete-vehicle/${vehicleId}`, {
+                method: 'DELETE'
+            });
+            
+            if (res.ok) {
+                alert("Record deleted successfully.");
+                searchOwner(); // Refresh the search results
+            } else {
+                const data = await res.json();
+                alert(data.error || "Failed to delete record.");
+            }
+        } catch (err) {
+            alert("Error connecting to server.");
+        }
+    }
+
+    function logout() { sessionStorage.clear(); window.location.replace("login.html"); }
+  </script>
+</body>
+</html>

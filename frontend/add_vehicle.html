@@ -1,251 +1,96 @@
-<!-- <!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Add Vehicle</title>
-  <link rel="stylesheet" href="styles.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-</head>
-<body>
-
-<nav>
-  <h2>Bluebook Renewal</h2>
-  <a href="index.html"><i class="fas fa-car"></i> Vehicles</a>
-  <a href="renewals.html"><i class="fas fa-history"></i> Renewal History</a>
-</nav>
-
-<main class = "form-page">
-  <div class="form-container">
-    <h2>Add New Vehicle</h2>
-
-    <div class="form-group">
-      <label>Plate Number</label>
-      <input type="text" id="plate_no">
-    </div>
-
-    <div class="form-group">
-      <label>Vehicle Type</label>
-      <select id="vehicle_type">
-        <option value="">Select Type</option>
-        <option>Bike</option>
-        <option>Scooter</option>
-        <option>Car</option>
-        <option>Truck</option>
-        <option>Bus</option>
-      </select>
-    </div>
-
-    <button class="btn-primary" onclick="addVehicle()">Add Vehicle</button>
-
-    <div class="msg" id="msg"></div>
-  </div>
-</main>
-
-<script>
-async function addVehicle() {
-  const msg = document.getElementById("msg");
-  msg.style.display = "none";
-
-  const plate_no = document.getElementById("plate_no").value;
-  const vehicle_type = document.getElementById("vehicle_type").value;
-
-  const user_id = sessionStorage.getItem("user_id");
-
-  if (!user_id) {
-    msg.className = "msg error";
-    msg.innerText = "You are not logged in.";
-    msg.style.display = "block";
-    return;
-  }
-
-  if (!plate_no || !vehicle_type) {
-    msg.className = "msg error";
-    msg.innerText = "All fields are required.";
-    msg.style.display = "block";
-    return;
-  }
-
-  try {
-    const res = await fetch(`/api/vehicles?user_id=${user_id}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ plate_no, vehicle_type })
-    });
-
-    const data = await res.json();
-
-    msg.className = res.ok ? "msg success" : "msg error";
-    msg.innerText = data.message || data.error;
-    msg.style.display = "block";
-
-  } catch (err) {
-    msg.className = "msg error";
-    msg.innerText = "Server not responding";
-    msg.style.display = "block";
-  }
-}
-</script>
-
-
-</body>
-</html> -->
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Add Vehicle</title>
+  <title>Add Vehicle - Bluebook</title>
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-  
-  <script>
-    // 1. THE AUTH GUARD
-    function checkAuth() {
-      const role = sessionStorage.getItem("role");
-      if (!role || role !== "OWNER") {
-        window.location.replace("login.html");
-      }
-    }
-    checkAuth();
-
-    // 2. LOGOUT FUNCTION
-    function logout() {
-      sessionStorage.clear();
-      window.location.replace("login.html");
-    }
-  </script>
-
-  <!-- <style>
-    .logout-btn {
-      margin-left: auto;
-      background: #ff4d4d;
-      color: white !important;
-      padding: 8px 15px;
-      border-radius: 5px;
-      cursor: pointer;
-      text-decoration: none;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .logout-btn:hover { background: #ff3333; }
-  </style> -->
 </head>
 <body>
+  <nav>
+    <h2>Bluebook.</h2>
+    <a href="index.html"><i class="fas fa-car"></i> Vehicles</a>
+    <a href="renewals.html"><i class="fas fa-history"></i> History</a>
+    <a href="javascript:void(0)" onclick="logout()" style="margin-top: auto; color: #f87171;"><i class="fas fa-sign-out-alt"></i> Logout</a>
+  </nav>
 
-<nav>
-  <h2>Bluebook Renewal</h2>
-  <a href="index.html"><i class="fas fa-car"></i> Vehicles</a>
-  <a href="renewals.html"><i class="fas fa-history"></i> Renewal History</a>
-  <a href="javascript:void(0)" onclick="logout()" style="margin-left:auto; color:red;">Logout</a>
-</nav>
+  <main>
+    <div style="max-width: 600px; margin: 0 auto;">
+      <header style="margin-bottom: 30px;">
+        <h1>Add New Vehicle</h1>
+        <p style="color: var(--text-muted);">Register your vehicle to the system.</p>
+      </header>
 
-<main class="form-page">
-  <div class="form-container">
-    <h2>Add New Vehicle</h2>
+      <div class="card" style="padding: 32px;">
+        <label>Plate Number</label>
+        <input type="text" id="plate_no" placeholder="e.g., BA-2-PA-1234">
 
-    <div class="form-group">
-      <label>Plate Number</label>
-      <input type="text" id="plate_no" placeholder="e.g., BA-2-PA-1234">
+        <label>Vehicle Type</label>
+        <select id="vehicle_type">
+          <option value="">Choose Type</option>
+          <option value="Bike">Bike</option>
+          <option value="Scooter">Scooter</option>
+          <option value="Car">Car</option>
+          <option value="Truck">Truck</option>
+        </select>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+          <div>
+            <label>Engine No</label>
+            <input type="text" id="engine_no" placeholder="Engine No">
+          </div>
+          <div>
+            <label>Chassis No</label>
+            <input type="text" id="chassis_no" placeholder="Chassis No">
+          </div>
+        </div>
+
+        <label>Last Renewal Date</label>
+        <input type="date" id="last_renewal">
+
+        <button onclick="addVehicle()">Register Vehicle</button>
+        <div id="msg" style="margin-top: 15px; text-align: center; font-weight: 500;"></div>
+      </div>
     </div>
+  </main>
 
-    <div class="form-group">
-      <label>Vehicle Type</label>
-      <select id="vehicle_type">
-        <option value="">Select Type</option>
-        <option value="Bike">Bike</option>
-        <option value="Scooter">Scooter</option>
-        <option value="Car">Car</option>
-        <option value="Truck">Truck</option>
-        <option value="Bus">Bus</option>
-      </select>
-    </div>
+  <script>
+    function logout() { sessionStorage.clear(); window.location.replace("login.html"); }
 
-    <div class="form-group">
-      <label>Engine Number</label>
-      <input type="text" id="engine_no" placeholder="Enter Engine No">
-    </div>
-
-    <div class="form-group">
-      <label>Chassis Number</label>
-      <input type="text" id="chassis_no" placeholder="Enter Chassis No">
-    </div>
-
-    <div class="form-group">
-    <label>Last Renewal Date</label>
-    <input type="date" id="last_renewal" required>
-</div>
-
-    <button class="btn-primary" onclick="addVehicle()">Add Vehicle</button>
-
-    <div class="msg" id="msg" style="display: none; margin-top: 15px;"></div>
-  </div>
-</main>
-
-
-<script>
-async function addVehicle() {
-  const msg = document.getElementById("msg");
-  msg.style.display = "none";
-
-  const plate_no = document.getElementById("plate_no").value;
-  const vehicle_type = document.getElementById("vehicle_type").value;
-  const engine_no = document.getElementById("engine_no").value;
-  const chassis_no = document.getElementById("chassis_no").value;
-  const last_renewal_date = document.getElementById('last_renewal').value; // Corrected
-
-  const user_id = sessionStorage.getItem("user_id");
-
-  // Updated Validation to include the Date
-  if (!plate_no || !vehicle_type || !engine_no || !chassis_no || !last_renewal_date) {
-    msg.className = "msg error";
-    msg.innerText = "All fields (Plate, Type, Engine, Chassis, and Last Renewal Date) are required.";
-    msg.style.display = "block";
-    msg.style.color = "red";
-    return;
-  }
-
-  try {
-    const res = await fetch(`/api/vehicles?user_id=${user_id}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ 
-        plate_no, 
-        vehicle_type,
-        engine_no,
-        chassis_no,
-        last_renewal_date // ADDED THIS
-      })
-    });
-
-    const data = await res.json();
-
-    if (res.ok) {
-      msg.className = "msg success";
-      msg.innerText = "Vehicle added successfully! Redirecting...";
-      msg.style.display = "block";
-      msg.style.color = "green";
+    async function addVehicle() {
+      const msg = document.getElementById("msg");
+      const user_id = sessionStorage.getItem("user_id");
       
-      setTimeout(() => {
-        window.location.href = "index.html";
-      }, 1500);
-    } else {
-      msg.className = "msg error";
-      msg.innerText = data.error || "Failed to add vehicle";
-      msg.style.display = "block";
-      msg.style.color = "red";
+      const payload = {
+        plate_no: plate_no.value,
+        vehicle_type: vehicle_type.value,
+        engine_no: engine_no.value,
+        chassis_no: chassis_no.value,
+        last_renewal_date: last_renewal.value
+      };
+
+      if (Object.values(payload).some(v => !v)) {
+        msg.innerText = "Please fill all fields.";
+        msg.style.color = "#dc2626";
+        return;
+      }
+
+      const res = await fetch(`/api/vehicles?user_id=${user_id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      if (res.ok) {
+        msg.innerText = "Success! Redirecting...";
+        msg.style.color = "#16a34a";
+        setTimeout(() => location.href = "index.html", 1500);
+      } else {
+        const data = await res.json();
+        msg.innerText = data.error || "Failed to add";
+        msg.style.color = "#dc2626";
+      }
     }
-
-  } catch (err) {
-    msg.className = "msg error";
-    msg.innerText = "Server not responding";
-    msg.style.display = "block";
-    msg.style.color = "red";
-  }
-}
-</script>
-
-
+  </script>
 </body>
 </html>

@@ -2,233 +2,82 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Admin Dashboard - Bluebook System</title>
+  <title>Admin Dashboard - Bluebook</title>
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-  <script>
-    // AUTH GUARD: Ensure only ADMIN can stay here
-    if (sessionStorage.getItem("role") !== "ADMIN") {
-      window.location.replace("login.html");
-    }
-    function logout() {
-      sessionStorage.clear();
-      window.location.replace("login.html");
-    }
-  </script>
-  <style>
-    /* Section specific styles */
-    .admin-section {
-      margin-bottom: 30px;
-    }
-    .form-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 15px;
-      margin-top: 15px;
-    }
-    .full-width {
-      grid-column: span 2;
-    }
-    .btn-delete {
-      background: var(--danger);
-      color: white;
-      border: none;
-      padding: 5px 10px;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 0.75rem;
-    }
-    #offMsg, #errorMsg {
-      margin-top: 10px;
-      font-weight: bold;
-      text-align: center;
-    }
-  </style>
 </head>
-<body>
+<body class="admin-body">
 
-<nav>
-  <h2>Bluebook Admin</h2>
-  <a href="admin.html" class="active"><i class="fas fa-user-shield"></i> Admin Portal</a>
-  <a href="javascript:void(0)" onclick="logout()" style="margin-left:auto; color:red;"><i class="fas fa-sign-out-alt"></i> Logout</a>
-</nav>
+  <nav>
+    <h2>Admin Portal</h2>
+    <a href="admin.html" class="active"><i class="fas fa-chart-line"></i> Dashboard</a>
+    <a href="admin_users.html"><i class="fas fa-users"></i> Manage Users</a>
+    <a href="admin_officers.html"><i class="fas fa-user-tie"></i> Manage Officers</a>
+    <a href="admin_prices.html"><i class="fas fa-tags"></i> Tax Rates</a>
+    <a href="javascript:void(0)" onclick="logout()" style="margin-top: auto; color: #f87171;"><i class="fas fa-sign-out-alt"></i> Logout</a>
+  </nav>
 
-<main>
-  <header>
-    <h1>System Administration</h1>
-  </header>
+  <main>
+    <header style="margin-bottom: 40px;">
+      <h1>System Overview</h1>
+      <p style="color: var(--text-muted);">Real-time monitoring of the Bluebook Renewal System.</p>
+    </header>
 
-  <div class="card admin-section">
-    <h3><i class="fas fa-user-plus"></i> Create New Officer Account</h3>
-    <p class="subtitle">Register a new government officer to verify bluebook renewals.</p>
-    
-    <div class="form-grid">
-      <div class="form-group">
-        <label>Full Name</label>
-        <input type="text" id="off_name" placeholder="E.g. Rajesh Hamal">
+    <div class="stats-grid" style="margin-bottom: 40px;">
+      <div class="stat-card">
+        <h3>Total Revenue</h3>
+        <p id="statRev" style="color: #16a34a;">Rs. 0</p>
       </div>
-      <div class="form-group">
-        <label>Username</label>
-        <input type="text" id="off_username" placeholder="E.g. officer_rajesh">
+      <div class="stat-card">
+        <h3>Users</h3>
+        <p id="statUsers">0</p>
       </div>
-      <div class="form-group">
-        <label>Password</label>
-        <input type="password" id="off_password" placeholder="••••••••">
-      </div>
-      <div class="form-group">
-        <label>Designation</label>
-        <input type="text" id="off_desig" placeholder="E.g. Senior Inspector">
+      <div class="stat-card">
+        <h3>Pending Renewals</h3>
+        <p id="statPending" style="color: #ef4444;">0</p>
       </div>
     </div>
-    
-    <button onclick="createOfficer()" class="btn-primary" style="margin-top: 10px; width: 200px;">
-      Register Officer
-    </button>
-    <p id="offMsg"></p>
-  </div>
 
-  <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 40px 0;">
-
-  <div class="card admin-section">
-    <h3><i class="fas fa-search"></i> Owner & Vehicle Lookup</h3>
-    <p class="subtitle">Search for a citizen to view their profile and vehicle status.</p>
-    <div style="display: flex; gap: 10px;">
-      <input type="text" id="searchUser" placeholder="Enter owner username..." style="flex: 1;">
-      <button onclick="searchOwner()" class="btn-primary">Search User</button>
-    </div>
-  </div>
-
-  <div id="resultArea" style="display: none;">
-    <div class="grid-container" style="display: grid; grid-template-columns: 1fr 1.5fr; gap: 20px;">
-      
-      <div class="card">
-        <h3>Owner Profile</h3>
-        <div id="profileInfo" style="line-height: 2.2;">
-          </div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 25px;">
+      <div class="card nav-tile" onclick="location.href='admin_users.html'">
+        <div class="tile-icon" style="background: #eff6ff; color: #3b82f6;"><i class="fas fa-search"></i></div>
+        <h3>User Lookup</h3>
+        <p>Search for citizens, view registered vehicles, and manage owner profiles.</p>
       </div>
 
-      <div class="card">
-        <h3>Registered Vehicles</h3>
-        <table>
-          <thead>
-            <tr>
-              <th>Plate No</th>
-              <th>Type</th>
-              <th>Status</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody id="vehicleList">
-             </tbody>
-        </table>
+      <div class="card nav-tile" onclick="location.href='admin_officers.html'">
+        <div class="tile-icon" style="background: #f0fdf4; color: #16a34a;"><i class="fas fa-user-tie"></i></div>
+        <h3>Officer Management</h3>
+        <p>Search, create, and manage departmental verification officer accounts.</p>
+      </div>
+
+      <div class="card nav-tile" onclick="location.href='admin_prices.html'">
+        <div class="tile-icon" style="background: #fff7ed; color: #ea580c;"><i class="fas fa-hand-holding-usd"></i></div>
+        <h3>Tax & Price Settings</h3>
+        <p>Configure renewal fees and taxes for different vehicle categories.</p>
       </div>
     </div>
-  </div>
+  </main>
 
-  <p id="errorMsg"></p>
-</main>
+  <script>
+    if (sessionStorage.getItem("role") !== "ADMIN") window.location.replace("login.html");
 
-<script>
-// --- FUNCTION: CREATE OFFICER ---
-async function createOfficer() {
-  const name = document.getElementById("off_name").value;
-  const user = document.getElementById("off_username").value;
-  const pass = document.getElementById("off_password").value;
-  const desig = document.getElementById("off_desig").value;
-  const msg = document.getElementById("offMsg");
+    async function loadStats() {
+      try {
+        const res = await fetch('/api/admin/stats');
+        const data = await res.json();
+        const formattedRev = new Intl.NumberFormat('en-NP', {
+          style: 'currency', currency: 'NPR', maximumFractionDigits: 0
+        }).format(data.revenue || 0);
 
-  if(!name || !user || !pass || !desig) {
-    msg.innerText = "Please fill all fields.";
-    msg.style.color = "red";
-    return;
-  }
-
-  try {
-    const res = await fetch("/api/admin/register-officer", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        full_name: name,
-        username: user,
-        password: pass,
-        designation: desig
-      })
-    });
-
-    const data = await res.json();
-    if (res.ok) {
-      msg.innerText = "Officer created successfully!";
-      msg.style.color = "green";
-      // Clear inputs
-      document.getElementById("off_name").value = "";
-      document.getElementById("off_username").value = "";
-      document.getElementById("off_password").value = "";
-      document.getElementById("off_desig").value = "";
-    } else {
-      msg.innerText = data.error || "Failed to create officer.";
-      msg.style.color = "red";
-    }
-  } catch (err) {
-    msg.innerText = "Server error.";
-    msg.style.color = "red";
-  }
-}
-
-// --- FUNCTION: SEARCH OWNER ---
-async function searchOwner() {
-  const username = document.getElementById("searchUser").value;
-  const resultArea = document.getElementById("resultArea");
-  const errorMsg = document.getElementById("errorMsg");
-
-  errorMsg.innerText = "";
-  if (!username) return;
-
-  try {
-    const res = await fetch(`/api/admin/search-owner?username=${username}`);
-    const data = await res.json();
-
-    if (!res.ok) {
-      resultArea.style.display = "none";
-      errorMsg.innerText = data.error;
-      errorMsg.style.color = "red";
-      return;
+        document.getElementById("statRev").innerText = formattedRev;
+        document.getElementById("statUsers").innerText = data.users || 0;
+        document.getElementById("statPending").innerText = data.pending || 0;
+      } catch (err) { console.error("Failed to load real stats:", err); }
     }
 
-    // Populate Profile
-    const profile = data.profile;
-    document.getElementById("profileInfo").innerHTML = `
-      <p><strong>Full Name:</strong> ${profile.full_name}</p>
-      <p><strong>Citizenship:</strong> ${profile.citizenship_no}</p>
-      <p><strong>District:</strong> ${profile.district}</p>
-      <p><strong>Mobile:</strong> ${profile.mobile_no}</p>
-    `;
-
-    // Populate Vehicles
-    const vehicleTable = document.getElementById("vehicleList");
-    vehicleTable.innerHTML = "";
-    
-    if(data.vehicles.length === 0) {
-        vehicleTable.innerHTML = "<tr><td colspan='4'>No vehicles registered.</td></tr>";
-    }
-
-    data.vehicles.forEach(v => {
-      const statusClass = v.status === 'ACTIVE' ? 'status-active' : 'status-expired';
-      vehicleTable.innerHTML += `
-        <tr>
-          <td>${v.plate_no}</td>
-          <td>${v.vehicle_type}</td>
-          <td><span class="status-pill ${statusClass}">${v.status || "N/A"}</span></td>
-          <td><button class="btn-delete" onclick="alert('Functionality to be implemented')">Delete</button></td>
-        </tr>
-      `;
-    });
-
-    resultArea.style.display = "block";
-
-  } catch (err) {
-    errorMsg.innerText = "Error connecting to server.";
-  }
-}
-</script>
+    function logout() { sessionStorage.clear(); window.location.replace("login.html"); }
+    loadStats();
+  </script>
 </body>
 </html>

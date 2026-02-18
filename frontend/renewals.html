@@ -2,106 +2,85 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Renewal History</title>
+  <title>Renewal History - Bluebook</title>
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-  <style>
-    .status-badge { padding: 5px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; }
-    .status-approved { background: #dcfce7; color: #16a34a; }
-    .status-pending { background: #fef9c3; color: #a16207; }
-    .status-rejected { background: #fee2e2; color: #dc2626; }
-    
-    .reason-box { 
-      margin-top: 5px; 
-      font-size: 0.75rem; 
-      color: #b91c1c; 
-      background: #fff5f5; 
-      padding: 5px; 
-      border-radius: 4px; 
-      border: 1px dashed #f87171;
-    }
-  </style>
 </head>
 <body>
+  <nav>
+    <h2>Bluebook.</h2>
+    <a href="index.html"><i class="fas fa-car"></i> Vehicles</a>
+    <a href="renewals.html" class="active"><i class="fas fa-history"></i> History</a>
+    <a href="javascript:void(0)" onclick="logout()" style="margin-top: auto; color: #f87171;"><i class="fas fa-sign-out-alt"></i> Logout</a>
+  </nav>
 
-<nav>
-  <h2>Bluebook Renewal</h2>
-  <a href="index.html"><i class="fas fa-car"></i> Vehicles</a>
-  <a href="renewals.html" class="active"><i class="fas fa-history"></i> Renewal History</a>
-  <a href="javascript:void(0)" onclick="sessionStorage.clear(); window.location.href='login.html'" style="margin-left:auto; color:red;">Logout</a>
-</nav>
+  <main>
+    <header style="margin-bottom: 30px;">
+      <h1>Renewal History</h1>
+      <p style="color: var(--text-muted);">Track your past and pending renewal requests.</p>
+    </header>
 
-<main>
-  <header>
-    <h1>Your Renewal History</h1>
-  </header>
+    <div class="card">
+      <table class="history-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Plate No</th>
+            <th>Amount</th>
+            <th>Method</th>
+            <th style="text-align: center;">Status</th>
+          </tr>
+        </thead>
+        <tbody id="historyTable">
+            </tbody>
+      </table>
+    </div>
+  </main>
 
-  <div class="card">
-    <table>
-      <thead>
-        <tr>
-          <th>Date</th>
-          <th>Plate No</th>
-          <th>Amount</th>
-          <th>Status</th>
-        </tr>
-      </thead>
-      <tbody id="historyTable"></tbody>
-    </table>
-  </div>
-</main>
+  <script>
+    const user_id = sessionStorage.getItem("user_id");
+    if (!user_id) window.location.replace("login.html");
 
-<script>
-async function loadHistory() {
-  const userId = sessionStorage.getItem("user_id");
-  
-  // CHANGED: Match the backend route /api/renewals and use query param ?user_id=
-  const res = await fetch(`/api/renewals?user_id=${userId}`);
-  
-  if (!res.ok) {
-    console.error("Failed to fetch history");
-    return;
-  }
+    async function loadHistory() {
+      try {
+        const res = await fetch(`/api/renewals?user_id=${user_id}`);
+        const data = await res.json();
+        const table = document.getElementById("historyTable");
+        table.innerHTML = "";
 
-  const data = await res.json();
-  const table = document.getElementById("historyTable");
-  table.innerHTML = "";
+        if (data.length === 0) {
+            table.innerHTML = `<tr><td colspan="5" style="padding: 40px; color: var(--text-muted);">No history found.</td></tr>`;
+            return;
+        }
 
-  if (data.length === 0) {
-    table.innerHTML = "<tr><td colspan='4' style='text-align:center;'>No renewal records found.</td></tr>";
-    return;
-  }
+        data.forEach(item => {
+          const date = new Date(item.payment_date).toLocaleDateString();
+          let statusClass = item.status === 'PENDING' ? 'pill-pending' : 
+                            item.status === 'APPROVED' ? 'pill-approved' : 'pill-rejected';
+          
+          let rejectionMsg = (item.status === 'REJECTED' && item.rejection_reason) 
+                             ? `<span class="rejection-text">Reason: ${item.rejection_reason}</span>` : '';
 
-  data.forEach(r => {
-    // Check if status exists to avoid errors
-    const status = r.status || "PENDING";
-    let statusClass = "status-" + status.toLowerCase();
-    
-    let statusCell = `<span class="status-badge ${statusClass}">${status}</span>`;
-    
-    if (status === 'REJECTED' && r.rejection_reason) {
-      statusCell += `
-        <div class="reason-box">
-          <strong>Reason:</strong> ${r.rejection_reason}
-        </div>
-        <button onclick="window.location.href='payment.html?bluebook_id=${r.bluebook_id}'" 
-                class="btn-renew" style="margin-top:10px; padding: 4px 8px; font-size: 0.7rem;">
-          Re-Submit
-        </button>`;
+          table.innerHTML += `
+            <tr>
+              <td>${date}</td>
+              <td><strong>${item.plate_no}</strong></td>
+              <td>Rs. ${item.amount}</td>
+              <td>${item.payment_method}</td>
+              <td style="text-align: center;">
+                <span class="status-pill ${statusClass}">${item.status}</span>
+                ${rejectionMsg}
+              </td>
+            </tr>
+          `;
+        });
+      } catch (err) {
+        console.error("Error loading history:", err);
+      }
     }
 
-    table.innerHTML += `
-      <tr>
-        <td>${new Date(r.payment_date || r.renewal_date).toLocaleDateString()}</td>
-        <td><strong>${r.plate_no}</strong></td>
-        <td>Rs. ${r.amount || 0}</td>
-        <td>${statusCell}</td>
-      </tr>
-    `;
-  });
-}
-
-loadHistory();
-</script>
+    function logout() { sessionStorage.clear(); window.location.replace("login.html"); }
+    loadHistory();
+  </script>
 </body>
 </html>

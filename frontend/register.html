@@ -2,116 +2,88 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Bluebook Renewal System - Register</title>
-  <link rel="stylesheet" href="styles.css">
-</head>
-
-<body class="login-body">
-
-  <div class="login-card">
-    <h1>Owner Registration</h1>
-    <p class="subtitle">Create a new vehicle owner account</p>
-
-    <input id="username" placeholder="Username">
-    <input id="password" type="password" placeholder="Password">
-    <input id="full_name" placeholder="Full Name">
-    <input id="citizenship_no" placeholder="Citizenship No">
-    <input id="district" placeholder="District">
-    <input id="mobile_no" placeholder="Mobile No">
-
-    <button onclick="register()">Register</button>
-    
-    <p class="auth-link">Already have an account? <a href="login.html">Login here</a></p>
-    
-    <p id="msg"></p>
-  </div>
-
-<script>
-async function register() {
-  const msg = document.getElementById("msg");
-  
-  try {
-    const res = await fetch("http://localhost:3000/api/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        username: username.value,
-        password: password.value,
-        full_name: full_name.value,
-        citizenship_no: citizenship_no.value,
-        district: district.value,
-        mobile_no: mobile_no.value
-      })
-    });
-
-    const data = await res.json();
-
-    if (res.ok) {
-      msg.innerText = "Registration successful! Redirecting to login...";
-      msg.style.color = "green";
-      
-      // Redirect to login after 2 seconds
-      setTimeout(() => {
-        window.location.href = "login.html";
-      }, 2000);
-    } else {
-      msg.innerText = data.error || "Registration failed";
-      msg.style.color = "red";
-    }
-  } catch (err) {
-    msg.innerText = "Server error. Please try again.";
-    msg.style.color = "red";
-  }
-}
-</script>
-
-</body>
-</html>
-
-
-
-<!-- <!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
   <title>Register - Bluebook Renewal</title>
   <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
-<body class="login-body">
-  <div class="login-card">
-    <h1>Register</h1>
-    <p class="subtitle">Create a new owner account</p>
-    <input id="username" placeholder="Username">
-    <input id="password" type="password" placeholder="Password">
-    <input id="full_name" placeholder="Full Name">
-    <input id="citizenship_no" placeholder="Citizenship No">
-    <input id="district" placeholder="District">
-    <input id="mobile_no" placeholder="Mobile No">
-    <button onclick="register()">Register</button>
-    <p class="auth-link">Already have an account? <a href="login.html">Login here</a></p>
-    <p id="msg"></p>
+<body>
+  <div class="auth-wrapper">
+    <div class="auth-side-info">
+      <h1>Join us Today.</h1>
+      <p>Create your account to start managing your vehicle records digitally. It's fast, secure, and legally compliant.</p>
+      <ul class="feature-list">
+        <li><i class="fas fa-id-card"></i> Centralized Vehicle Records</li>
+        <li><i class="fas fa-bell"></i> Never miss an Expiry Date</li>
+        <li><i class="fas fa-shield-alt"></i> Secure Government Standards</li>
+      </ul>
+    </div>
+    <div class="auth-side-form">
+      <div class="auth-card" style="max-width: 500px;">
+        <h2>Create Account</h2>
+        <p style="color: var(--text-muted); margin-bottom: 24px;">Fill in your details to register as a vehicle owner.</p>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+            <div>
+                <label>Username</label>
+                <input id="username" type="text">
+            </div>
+            <div>
+                <label>Password</label>
+                <input id="password" type="password">
+            </div>
+        </div>
+
+        <label>Full Name</label>
+        <input id="full_name" type="text">
+
+        <label>Citizenship Number</label>
+        <input id="citizenship_no" type="text" placeholder="12-34-56-7890">
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+            <div>
+                <label>District</label>
+                <input id="district" type="text">
+            </div>
+            <div>
+                <label>Mobile Number</label>
+                <input id="mobile_no" type="text" placeholder="98XXXXXXXX">
+            </div>
+        </div>
+
+        <button onclick="register()">Create Account</button>
+        
+        <p style="text-align: center; margin-top: 20px; font-size: 0.9rem;">
+          Already have an account? <a href="login.html" style="color: var(--primary); font-weight: 600;">Sign In</a>
+        </p>
+        <p id="msg" style="margin-top: 15px; text-align: center; font-size: 0.85rem;"></p>
+      </div>
+    </div>
   </div>
+
   <script>
     async function register() {
       const msg = document.getElementById("msg");
-      const res = await fetch("/api/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          username: username.value, password: password.value, full_name: full_name.value,
-          citizenship_no: citizenship_no.value, district: district.value, mobile_no: mobile_no.value
-        })
-      });
-      if (res.ok) {
-        msg.innerText = "Success! Redirecting...";
-        msg.style.color = "green";
-        setTimeout(() => window.location.href = "login.html", 2000);
-      } else {
-        const data = await res.json();
-        msg.innerText = data.error || "Failed";
-        msg.style.color = "red";
-      }
+      try {
+        const res = await fetch("/api/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            username: username.value, password: password.value, full_name: full_name.value,
+            citizenship_no: citizenship_no.value, district: district.value, mobile_no: mobile_no.value
+          })
+        });
+
+        if (res.ok) {
+          msg.innerText = "Success! Redirecting to login...";
+          msg.style.color = "#16a34a";
+          setTimeout(() => window.location.href = "login.html", 2000);
+        } else {
+          const data = await res.json();
+          msg.innerText = data.error || "Registration failed";
+          msg.style.color = "#dc2626";
+        }
+      } catch (err) { msg.innerText = "Connection error"; }
     }
   </script>
 </body>
-</html> -->
+</html>

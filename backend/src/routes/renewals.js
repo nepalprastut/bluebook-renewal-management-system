@@ -12,7 +12,7 @@ router.get("/", async (req, res) => {
   try {
     const query = `
       SELECT v.plate_no, r.renewal_date, p.amount, p.status, 
-             p.rejection_reason, b.bluebook_id, p.payment_date
+             p.rejection_reason, b.bluebook_id, p.payment_date, p.payment_method
       FROM payments p
       JOIN renewals r ON p.renewal_id = r.renewal_id
       JOIN bluebooks b ON r.bluebook_id = b.bluebook_id
@@ -40,10 +40,16 @@ router.get("/", async (req, res) => {
 // ============================================================
 // 2. PAYMENT SUBMISSION
 // Handles: payment.html (The "Pay Now" button)
-// Fix: Prevents duplicate pending requests
+// Fix: Prevents duplicate pending requests and enforces integer ID
 // ============================================================
 router.post("/pay", async (req, res) => {
   const { bluebook_id, payment_method } = req.body;
+  
+  // Guard against null/invalid IDs
+  if (!bluebook_id || bluebook_id === "null") {
+    return res.status(400).json({ error: "Invalid Bluebook ID provided." });
+  }
+
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
@@ -68,7 +74,7 @@ router.post("/pay", async (req, res) => {
     if (vehicleRes.rows.length === 0) throw new Error("Vehicle not found.");
 
     const type = vehicleRes.rows[0].vehicle_type;
-    let amount = (type === "Car") ? 15000 : (type === "Bike") ? 3000 : (type === "Scooter") ? 2500 : 5000;
+    let amount = (type === "Car") ? 15000 : (type === "Bike") ? 3000 : (type === "Scooter") ? 2500 : (type === "Truck") ? 25000 : 5000;
 
     const validTo = new Date();
     validTo.setFullYear(validTo.getFullYear() + 1);
@@ -91,6 +97,7 @@ router.post("/pay", async (req, res) => {
     res.json({ message: "Payment submitted! Waiting for officer verification." });
   } catch (err) {
     await client.query("ROLLBACK");
+    console.error("Payment Submission Error:", err.message);
     res.status(500).json({ error: err.message });
   } finally {
     client.release();
@@ -100,21 +107,30 @@ router.post("/pay", async (req, res) => {
 // ============================================================
 // 3. PAYMENT PAGE INFO
 // Handles: payment.html (Loading vehicle details before paying)
+// Fix: Added explicit casting to INT to prevent syntax errors
 // ============================================================
 router.get("/info/:id", async (req, res) => {
+  const { id } = req.params;
+
+  // Final Guard: If the ID is missing or the literal string "null"
+  if (!id || id === "null" || id === "undefined") {
+    return res.status(400).json({ error: "Bluebook ID is missing or invalid." });
+  }
+
   try {
     const result = await pool.query(
       `SELECT v.vehicle_type, v.plate_no 
        FROM bluebooks b 
        JOIN vehicles v ON b.vehicle_id = v.vehicle_id 
-       WHERE b.bluebook_id = $1`,
-      [req.params.id]
+       WHERE b.bluebook_id = $1::int`, // Explicitly cast to integer
+      [id]
     );
     
     if (result.rows.length === 0) return res.status(404).json({ error: "Vehicle not found" });
     
     const type = result.rows[0].vehicle_type;
-    let amount = (type === "Car") ? 15000 : (type === "Bike") ? 3000 : (type === "Scooter") ? 2500 : 5000;
+    // Calculation logic matching the /pay route
+    let amount = (type === "Car") ? 15000 : (type === "Bike") ? 3000 : (type === "Scooter") ? 2500 : (type === "Truck") ? 25000 : 5000;
 
     res.json({ 
       plate_no: result.rows[0].plate_no, 
@@ -122,7 +138,8 @@ router.get("/info/:id", async (req, res) => {
       amount: amount 
     });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("Info Fetch Error:", err.message);
+    res.status(500).json({ error: "Internal Server Error" });
   }
 });
 
