@@ -5,104 +5,103 @@
   <title>Renewal History</title>
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <style>
+    .status-badge { padding: 5px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; }
+    .status-approved { background: #dcfce7; color: #16a34a; }
+    .status-pending { background: #fef9c3; color: #a16207; }
+    .status-rejected { background: #fee2e2; color: #dc2626; }
+    
+    .reason-box { 
+      margin-top: 5px; 
+      font-size: 0.75rem; 
+      color: #b91c1c; 
+      background: #fff5f5; 
+      padding: 5px; 
+      border-radius: 4px; 
+      border: 1px dashed #f87171;
+    }
+  </style>
 </head>
 <body>
-
-<script>
-  const user_id = sessionStorage.getItem("user_id");
-  const role = sessionStorage.getItem("role");
-
-  if (!user_id || role !== "OWNER") {
-    window.location.replace("login.html");
-  }
-
-  function logout() {
-    sessionStorage.clear();
-    window.location.replace("login.html");
-  }
-</script>
 
 <nav>
   <h2>Bluebook Renewal</h2>
   <a href="index.html"><i class="fas fa-car"></i> Vehicles</a>
   <a href="renewals.html" class="active"><i class="fas fa-history"></i> Renewal History</a>
-  <a href="javascript:void(0)" onclick="logout()" style="margin-left:auto; color:red;">Logout</a>
+  <a href="javascript:void(0)" onclick="sessionStorage.clear(); window.location.href='login.html'" style="margin-left:auto; color:red;">Logout</a>
 </nav>
 
 <main>
   <header>
-    <h1>Bluebook Renewal History</h1>
+    <h1>Your Renewal History</h1>
   </header>
 
   <div class="card">
     <table>
       <thead>
         <tr>
+          <th>Date</th>
           <th>Plate No</th>
-          <th>Renewal Date</th>
-          <th>Valid Period</th>
           <th>Amount</th>
-          <th>Payment Status</th>
-          <th>Method</th>
+          <th>Status</th>
         </tr>
       </thead>
-      <tbody id="renewalTable"></tbody>
+      <tbody id="historyTable"></tbody>
     </table>
   </div>
 </main>
 
 <script>
-function safeDate(d) {
-  if (!d) return "-";
-  return new Date(d).toLocaleDateString();
-}
+async function loadHistory() {
+  const userId = sessionStorage.getItem("user_id");
+  
+  // CHANGED: Match the backend route /api/renewals and use query param ?user_id=
+  const res = await fetch(`/api/renewals?user_id=${userId}`);
+  
+  if (!res.ok) {
+    console.error("Failed to fetch history");
+    return;
+  }
 
-async function loadRenewals() {
-  try {
-    const res = await fetch(`/api/renewals?user_id=${user_id}`);
-    const data = await res.json();
+  const data = await res.json();
+  const table = document.getElementById("historyTable");
+  table.innerHTML = "";
 
-    const table = document.getElementById("renewalTable");
-    table.innerHTML = "";
+  if (data.length === 0) {
+    table.innerHTML = "<tr><td colspan='4' style='text-align:center;'>No renewal records found.</td></tr>";
+    return;
+  }
 
-    if (!data.length) {
-      table.innerHTML = `
-        <tr>
-          <td colspan="6" style="text-align:center;">
-            No renewal history found.
-          </td>
-        </tr>
-      `;
-      return;
+  data.forEach(r => {
+    // Check if status exists to avoid errors
+    const status = r.status || "PENDING";
+    let statusClass = "status-" + status.toLowerCase();
+    
+    let statusCell = `<span class="status-badge ${statusClass}">${status}</span>`;
+    
+    if (status === 'REJECTED' && r.rejection_reason) {
+      statusCell += `
+        <div class="reason-box">
+          <strong>Reason:</strong> ${r.rejection_reason}
+        </div>
+        <button onclick="window.location.href='payment.html?bluebook_id=${r.bluebook_id}'" 
+                class="btn-renew" style="margin-top:10px; padding: 4px 8px; font-size: 0.7rem;">
+          Re-Submit
+        </button>`;
     }
 
-    data.forEach(r => {
-      const paymentStatus = r.status || "PENDING";
-
-      table.innerHTML += `
-        <tr>
-          <td><strong>${r.plate_no}</strong></td>
-          <td>${safeDate(r.renewal_date)}</td>
-          <td>${safeDate(r.valid_from)} - ${safeDate(r.valid_to)}</td>
-          <td>${r.amount ? "Rs. " + r.amount : "-"}</td>
-          <td>
-            <span class="status-pill ${paymentStatus}">
-              ${paymentStatus}
-            </span>
-          </td>
-          <td>${r.payment_method || "-"}</td>
-        </tr>
-      `;
-    });
-
-  } catch (err) {
-    console.error(err);
-    alert("Failed to load renewal history");
-  }
+    table.innerHTML += `
+      <tr>
+        <td>${new Date(r.payment_date || r.renewal_date).toLocaleDateString()}</td>
+        <td><strong>${r.plate_no}</strong></td>
+        <td>Rs. ${r.amount || 0}</td>
+        <td>${statusCell}</td>
+      </tr>
+    `;
+  });
 }
 
-loadRenewals();
+loadHistory();
 </script>
-
 </body>
 </html>

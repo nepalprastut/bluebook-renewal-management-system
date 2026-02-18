@@ -31,11 +31,79 @@
       border-radius: 4px;
       cursor: pointer;
       font-size: 0.85rem;
+      margin-top: 5px;
     }
-    .status-active { color: #16a34a; font-weight: bold; }
-    .status-expired { color: #dc2626; font-weight: bold; }
-    /* New style for Pending verification */
-    .status-pending { color: #f59e0b; font-weight: bold; font-style: italic; }
+
+    .status-active {
+      color: #16a34a;
+      font-weight: bold;
+    }
+
+    .status-expired {
+      color: #dc2626;
+      font-weight: bold;
+    }
+
+    .status-pending {
+      color: #b45309;
+      background-color: #fef3c7;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      font-weight: bold;
+    }
+
+    .status-cell {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 4px;
+    }
+
+    /* Fix alignment in the table */
+    table th,
+    table td {
+      padding: 12px;
+      text-align: left;
+      vertical-align: middle;
+      /* Centers content vertically */
+    }
+
+    .status-cell {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      /* Centers items horizontally in the cell */
+      justify-content: center;
+      /* Centers items vertically */
+      gap: 5px;
+      min-height: 50px;
+      /* Ensures consistent row height */
+    }
+
+    .btn-renew {
+      background-color: #2563eb;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      transition: background 0.2s;
+    }
+
+    .btn-renew:hover {
+      background-color: #1d4ed8;
+    }
+
+    .status-active,
+    .status-expired,
+    .status-pending {
+      display: inline-block;
+      text-align: center;
+      width: 100%;
+      /* Ensures text is centered relative to the column */
+    }
   </style>
 </head>
 
@@ -89,6 +157,7 @@
 
     async function loadVehicles() {
       try {
+        // Ensure this route matches the query we updated in owner.js
         const res = await fetch(`/api/owner/vehicles?user_id=${user_id}`);
         const data = await res.json();
         const table = document.getElementById("vehicleTable");
@@ -97,36 +166,43 @@
         let total = data.length, active = 0, expired = 0;
 
         data.forEach(v => {
-          const today = new Date();
-          const expiry = new Date(v.expiry_date);
-          const isExpired = expiry < today;
+  // 1. Get today's date in YYYY-MM-DD format (Standard SQL format)
+  const todayStr = new Date().toISOString().split('T')[0]; 
+  
+  // 2. Get expiry date in YYYY-MM-DD format
+  const expiryStr = v.expiry_date ? v.expiry_date.split("T")[0] : "";
+  
+  // 3. Simple String Comparison (Safe from timezone shifts)
+  const isExpired = expiryStr < todayStr;
 
-          let statusHtml = "";
+  let statusHtml = "";
 
-          // Check for pending payment status first
-          if (v.payment_status === 'PENDING') {
-            statusHtml = `<span class="status-pending"><i class="fas fa-clock"></i> PENDING VERIFICATION</span>`;
-            expired++; 
-          } 
-          else if (isExpired) {
-            statusHtml = `<button onclick="goToPayment(${v.bluebook_id})" class="btn-renew">Renew Now</button>`;
-            expired++;
-          } 
-          else {
-            statusHtml = `<span class="status-active">ACTIVE</span>`;
-            active++;
-          }
+  if (v.latest_payment_status === 'PENDING') {
+    statusHtml = `<div class="status-cell"><span class="status-badge status-pending">PENDING</span></div>`;
+    expired++; 
+  } 
+  else if (isExpired) {
+    statusHtml = `
+      <div class="status-cell">
+        <span class="status-expired">EXPIRED</span>
+        <button onclick="goToPayment(${v.bluebook_id})" class="btn-renew">Renew Now</button>
+      </div>`;
+    expired++;
+  } 
+  else {
+    statusHtml = `<div class="status-cell"><span class="status-active">ACTIVE</span></div>`;
+    active++;
+  }
 
-          table.innerHTML += `
-            <tr>
-              <td>${v.full_name || "N/A"}</td>
-              <td>${v.plate_no}</td>
-              <td>${v.vehicle_type}</td>
-              <td>${v.expiry_date ? v.expiry_date.split("T")[0] : "N/A"}</td>
-              <td>${statusHtml}</td>
-            </tr>
-          `;
-        });
+  table.innerHTML += `
+    <tr>
+      <td>${v.full_name || "N/A"}</td>
+      <td><strong>${v.plate_no}</strong></td>
+      <td>${v.vehicle_type}</td>
+      <td>${expiryStr}</td> <td style="text-align: center;">${statusHtml}</td>
+    </tr>
+  `;
+});
 
         document.getElementById("totalCount").innerText = total;
         document.getElementById("activeCount").innerText = active;
@@ -140,7 +216,11 @@
       window.location.href = `payment.html?bluebook_id=${bluebookId}`;
     }
 
+    // Refresh every time the page is shown (useful for back-navigation)
+    window.addEventListener('pageshow', loadVehicles);
     loadVehicles();
   </script>
+
 </body>
+
 </html>

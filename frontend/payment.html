@@ -80,39 +80,63 @@
 
             msg.style.display = "none";
 
-            try {
-                const res = await fetch("/api/renewals/pay", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        bluebook_id: bluebookId,
-                        payment_method: method
-                    })
-                });
+        //     try {
+        //         const res = await fetch("/api/renewals/pay", {
+        //             method: "POST",
+        //             headers: { "Content-Type": "application/json" },
+        //             body: JSON.stringify({
+        //                 bluebook_id: bluebookId,
+        //                 payment_method: method
+        //             })
+        //         });
 
-                const result = await res.json();
+        //         const result = await res.json();
 
-                if (res.ok) {
-                    msg.className = "msg success";
-                    msg.innerText = "Payment Successful! Redirecting...";
-                    msg.style.display = "block";
+        //         if (res.ok) {
+        //             msg.className = "msg success";
+        //             msg.innerText = "Payment Successful! Redirecting...";
+        //             msg.style.display = "block";
 
-                    setTimeout(() => {
-                        window.location.href = "renewals.html";
-                    }, 1500);
+        //             setTimeout(() => {
+        //                 window.location.href = "renewals.html";
+        //             }, 1500);
 
-                } else {
-                    msg.className = "msg error";
-                    msg.innerText = result.error;
-                    msg.style.display = "block";
-                }
+        //         } else {
+        //             msg.className = "msg error";
+        //             msg.innerText = result.error;
+        //             msg.style.display = "block";
+        //         }
 
-            } catch (err) {
-                msg.className = "msg error";
-                msg.innerText = "Server error occurred.";
-                msg.style.display = "block";
-            }
+        //     } catch (err) {
+        //         msg.className = "msg error";
+        //         msg.innerText = "Server error occurred.";
+        //         msg.style.display = "block";
+        //     }
+        // }
+
+        try {
+        const res = await fetch('/api/renewals/pay', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                bluebook_id: bluebookId,
+                payment_method: method
+            })
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+            // Show the Success Modal instead of an alert
+            document.getElementById("successModal").style.display = "block";
+        } else {
+            alert(data.error || "Payment failed");
         }
+    } catch (err) {
+        console.error("Payment Error:", err);
+        alert("Server error. Please try again.");
+    }
+}
 
         let renewalAmount = 0;
 
@@ -130,6 +154,17 @@
 
 
     </script>
+
+<div id="successModal" class="modal">
+  <div class="modal-content">
+    <div class="success-icon">
+      <i class="fas fa-check-circle"></i>
+    </div>
+    <h2>Submission Successful!</h2>
+    <p>Your payment has been recorded. An officer will verify your documents shortly.</p>
+    <button class="btn-done" onclick="window.location.href='renewals.html'">View History</button>
+  </div>
+</div>
 
 </body>
 

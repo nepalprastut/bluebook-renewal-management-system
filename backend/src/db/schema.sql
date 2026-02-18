@@ -8,6 +8,9 @@ CREATE TABLE users (
 INSERT INTO users (username, password_hash, role)
 VALUES ('prastut', 'hashed_pw', 'OWNER');
 
+INSERT INTO users (username, password_hash, role)
+VALUES ('administrator', 'admin123', 'ADMIN');
+
 SELECT * FROM users;
 
 
@@ -145,9 +148,35 @@ SELECT * FROM users;
 SELECT * FROM vehicle_owners;
 
 
+SELECT * FROM users;
 
-DELETE FROM renewals 
-WHERE renewal_id = 2;
+SELECT * FROM payments;
+SELECT * FROM renewals;
 
+
+-- SELECT v.vehicle_id, v.plate_no, b.bluebook_id, b.expiry_date, b.status
+-- FROM vehicles v
+-- JOIN bluebooks b ON v.vehicle_id = b.vehicle_id
+-- WHERE v.owner_id IN (
+--   SELECT owner_id FROM vehicle_owners WHERE user_id = 17
+-- );
+
+ALTER TABLE payments
+ADD COLUMN status VARCHAR(20) DEFAULT 'PENDING';
+
+ALTER TABLE payments
+ADD COLUMN verified_by INTEGER REFERENCES users(user_id);
+
+ALTER TABLE payments
+ADD COLUMN verified_at TIMESTAMP;
+
+SELECT * FROM officers;
+
+
+ALTER TABLE bluebooks ADD COLUMN last_renewal_date DATE;
+
+ALTER TABLE payments ADD COLUMN rejection_reason TEXT;
+
+SELECT expiry_date FROM bluebooks WHERE bluebook_id = 20;
 
 

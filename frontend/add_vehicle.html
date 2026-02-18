@@ -172,11 +172,17 @@ async function addVehicle() {
       <input type="text" id="chassis_no" placeholder="Enter Chassis No">
     </div>
 
+    <div class="form-group">
+    <label>Last Renewal Date</label>
+    <input type="date" id="last_renewal" required>
+</div>
+
     <button class="btn-primary" onclick="addVehicle()">Add Vehicle</button>
 
     <div class="msg" id="msg" style="display: none; margin-top: 15px;"></div>
   </div>
 </main>
+
 
 <script>
 async function addVehicle() {
@@ -187,13 +193,14 @@ async function addVehicle() {
   const vehicle_type = document.getElementById("vehicle_type").value;
   const engine_no = document.getElementById("engine_no").value;
   const chassis_no = document.getElementById("chassis_no").value;
+  const last_renewal_date = document.getElementById('last_renewal').value; // Corrected
 
   const user_id = sessionStorage.getItem("user_id");
 
-  // Basic Validation
-  if (!plate_no || !vehicle_type || !engine_no || !chassis_no) {
+  // Updated Validation to include the Date
+  if (!plate_no || !vehicle_type || !engine_no || !chassis_no || !last_renewal_date) {
     msg.className = "msg error";
-    msg.innerText = "All fields (Plate, Type, Engine, Chassis) are required.";
+    msg.innerText = "All fields (Plate, Type, Engine, Chassis, and Last Renewal Date) are required.";
     msg.style.display = "block";
     msg.style.color = "red";
     return;
@@ -207,7 +214,8 @@ async function addVehicle() {
         plate_no, 
         vehicle_type,
         engine_no,
-        chassis_no 
+        chassis_no,
+        last_renewal_date // ADDED THIS
       })
     });
 
@@ -219,7 +227,6 @@ async function addVehicle() {
       msg.style.display = "block";
       msg.style.color = "green";
       
-      // Redirect back to list after success
       setTimeout(() => {
         window.location.href = "index.html";
       }, 1500);
@@ -238,6 +245,7 @@ async function addVehicle() {
   }
 }
 </script>
+
 
 </body>
 </html>

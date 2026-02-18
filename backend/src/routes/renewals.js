@@ -1,255 +1,129 @@
-// // const express = require("express");
-// // const router = express.Router();
-// // const pool = require("../db");
-
-
-// // /* GET renewal history */
-// // router.get("/", async (req, res) => {
-// //   try {
-// //     const query = `
-// //       SELECT v.plate_no,
-// //              r.renewal_date,
-// //              r.valid_from,
-// //              r.valid_to,
-// //              p.amount,
-// //              p.payment_date
-// //       FROM vehicles v
-// //       JOIN bluebooks b ON v.vehicle_id = b.vehicle_id
-// //       JOIN renewals r ON b.bluebook_id = r.bluebook_id
-// //       LEFT JOIN payments p ON r.renewal_id = p.renewal_id
-// //       ORDER BY r.renewal_date DESC
-// //     `;
-
-// //     const result = await pool.query(query);
-// //     res.json(result.rows);
-// //   } catch (err) {
-// //     res.status(500).json({ error: err.message });
-// //   }
-// // });
-
-// // module.exports = router;
-
-
-// //new code:
-// const express = require("express");
-// const router = express.Router();
-// const pool = require("../db");
-
-// // 1. GET renewal history (Filtered by user_id)
-// router.get("/", async (req, res) => {
-//   const { user_id } = req.query;
-//   try {
-//     const query = `
-//       SELECT v.plate_no, r.renewal_date, r.valid_from, r.valid_to, 
-//              p.amount, p.payment_date, p.payment_method
-//       FROM users u
-//       JOIN vehicle_owners o ON u.user_id = o.user_id
-//       JOIN vehicles v ON o.owner_id = v.owner_id
-//       JOIN bluebooks b ON v.vehicle_id = b.vehicle_id
-//       JOIN renewals r ON b.bluebook_id = r.bluebook_id
-//       LEFT JOIN payments p ON r.renewal_id = p.renewal_id
-//       WHERE u.user_id = $1
-//       ORDER BY r.renewal_date DESC
-//     `;
-//     const result = await pool.query(query, [user_id]);
-//     res.json(result.rows);
-//   } catch (err) {
-//     res.status(500).json({ error: err.message });
-//   }
-// });
-
-// // 2. POST Perform Renewal Payment
-// router.post("/pay", async (req, res) => {
-//   const { bluebook_id, amount } = req.body;
-//   const client = await pool.connect();
-
-//   try {
-//     await client.query('BEGIN');
-
-//     // Insert into Renewals
-//     const renewalRes = await client.query(
-//       `INSERT INTO renewals (bluebook_id, renewal_date, valid_from, valid_to, total_amount) 
-//        VALUES ($1, CURRENT_DATE, CURRENT_DATE, CURRENT_DATE + INTERVAL '1 year', $2) 
-//        RETURNING renewal_id`,
-//       [bluebook_id, amount]
-//     );
-
-//     const renewalId = renewalRes.rows[0].renewal_id;
-
-//     // Insert into Payments
-//     await client.query(
-//       `INSERT INTO payments (renewal_id, payment_date, amount, payment_method) 
-//        VALUES ($1, CURRENT_DATE, $2, 'Online')`,
-//       [renewalId, amount]
-//     );
-
-//     // Update Bluebook status and expiry
-//     await client.query(
-//       `UPDATE bluebooks 
-//        SET status = 'ACTIVE', expiry_date = expiry_date + INTERVAL '1 year' 
-//        WHERE bluebook_id = $1`,
-//       [bluebook_id]
-//     );
-
-//     await client.query('COMMIT');
-//     res.json({ message: "Renewal successful!" });
-//   } catch (err) {
-//     await client.query('ROLLBACK');
-//     console.error(err);
-//     res.status(500).json({ error: "Transaction failed" });
-//   } finally {
-//     client.release();
-//   }
-// });
-
-// module.exports = router;
-
-
 const express = require("express");
 const router = express.Router();
 const pool = require("../db");
 
-
-// ===============================
-// 1️⃣ GET Renewal History
-// ===============================
+// ============================================================
+// 1. RENEWAL HISTORY PAGE
+// Handles: renewals.html
+// Fix: Shows only the latest attempt per vehicle using MAX ID
+// ============================================================
 router.get("/", async (req, res) => {
   const { user_id } = req.query;
-
   try {
     const query = `
-      SELECT v.plate_no,
-             r.renewal_date,
-             r.valid_from,
-             r.valid_to,
-             p.amount,
-             p.payment_date,
-             p.payment_method,
-             p.status
-      FROM users u
-      JOIN vehicle_owners o ON u.user_id = o.user_id
-      JOIN vehicles v ON o.owner_id = v.owner_id
-      JOIN bluebooks b ON v.vehicle_id = b.vehicle_id
-      JOIN renewals r ON b.bluebook_id = r.bluebook_id
-      LEFT JOIN payments p ON r.renewal_id = p.renewal_id
-      WHERE u.user_id = $1
-      ORDER BY r.renewal_date DESC
-    `;
+      SELECT v.plate_no, r.renewal_date, p.amount, p.status, 
+             p.rejection_reason, b.bluebook_id, p.payment_date
+      FROM payments p
+      JOIN renewals r ON p.renewal_id = r.renewal_id
+      JOIN bluebooks b ON r.bluebook_id = b.bluebook_id
+      JOIN vehicles v ON b.vehicle_id = v.vehicle_id
+      WHERE p.payment_id IN (
+          SELECT MAX(p2.payment_id)
+          FROM payments p2
+          JOIN renewals r2 ON p2.renewal_id = r2.renewal_id
+          JOIN bluebooks b2 ON r2.bluebook_id = b2.bluebook_id
+          JOIN vehicles v2 ON b2.vehicle_id = v2.vehicle_id
+          JOIN vehicle_owners o2 ON v2.owner_id = o2.owner_id
+          WHERE o2.user_id = $1
+          GROUP BY v2.vehicle_id
+      )
+      ORDER BY p.payment_date DESC`;
 
     const result = await pool.query(query, [user_id]);
     res.json(result.rows);
-
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Failed to fetch renewal history" });
+    console.error("History Error:", err);
+    res.status(500).json({ error: "Failed to load history" });
   }
 });
 
-
-// ===============================
-// Perform Renewal + Payment
-// ===============================
-
-
+// ============================================================
+// 2. PAYMENT SUBMISSION
+// Handles: payment.html (The "Pay Now" button)
+// Fix: Prevents duplicate pending requests
+// ============================================================
 router.post("/pay", async (req, res) => {
   const { bluebook_id, payment_method } = req.body;
   const client = await pool.connect();
-
   try {
     await client.query("BEGIN");
 
-    // 1. Get vehicle type for calculation
-    const vehicleRes = await client.query(
-      `SELECT v.vehicle_type FROM bluebooks b
-       JOIN vehicles v ON b.vehicle_id = v.vehicle_id
-       WHERE b.bluebook_id = $1`,
-      [bluebook_id]
-    );
+    // Guard: Don't allow a second payment if one is already 'PENDING'
+    const pendingCheck = await client.query(`
+        SELECT p.payment_id FROM payments p
+        JOIN renewals r ON p.renewal_id = r.renewal_id
+        WHERE r.bluebook_id = $1 AND p.status = 'PENDING'
+    `, [bluebook_id]);
 
-    if (vehicleRes.rows.length === 0) {
-      throw new Error("Vehicle not found for this bluebook");
+    if (pendingCheck.rows.length > 0) {
+      throw new Error("A renewal request for this vehicle is already pending.");
     }
 
-    const vehicleType = vehicleRes.rows[0].vehicle_type;
-    let amount = (vehicleType === "Car") ? 15000 : (vehicleType === "Bike") ? 3000 : 2500;
+    // Get info for tax calculation
+    const vehicleRes = await client.query(
+      `SELECT v.vehicle_type FROM bluebooks b JOIN vehicles v ON b.vehicle_id = v.vehicle_id WHERE b.bluebook_id = $1`,
+      [bluebook_id]
+    );
+    
+    if (vehicleRes.rows.length === 0) throw new Error("Vehicle not found.");
+
+    const type = vehicleRes.rows[0].vehicle_type;
+    let amount = (type === "Car") ? 15000 : (type === "Bike") ? 3000 : (type === "Scooter") ? 2500 : 5000;
 
     const validTo = new Date();
     validTo.setFullYear(validTo.getFullYear() + 1);
 
-    // 2. Insert Renewal (FIXED: Removed 'status' because it's not in your renewals table)
+    // Create the Renewal record
     const renewalRes = await client.query(
-      `INSERT INTO renewals
-       (bluebook_id, renewal_date, valid_from, valid_to, total_amount)
-       VALUES ($1, CURRENT_DATE, CURRENT_DATE, $2, $3)
-       RETURNING renewal_id`,
-      [bluebook_id, validTo, amount] // Corrected: Match the columns in your schema
+      `INSERT INTO renewals (bluebook_id, renewal_date, valid_from, valid_to, total_amount) 
+       VALUES ($1, CURRENT_DATE, CURRENT_DATE, $2, $3) RETURNING renewal_id`,
+      [bluebook_id, validTo, amount]
     );
 
-    const renewalId = renewalRes.rows[0].renewal_id;
-
-    // 3. Insert Payment (FIXED: Ensure status 'PENDING' is the LAST column)
+    // Create the Payment record (Status starts as PENDING)
     await client.query(
-      `INSERT INTO payments
-       (renewal_id, payment_date, amount, payment_method, status)
+      `INSERT INTO payments (renewal_id, payment_date, amount, payment_method, status) 
        VALUES ($1, CURRENT_DATE, $2, $3, 'PENDING')`,
-      [renewalId, amount, payment_method || "Online"]
-    );
-
-    // 4. Update Bluebook expiry (FIXED: Added missing WHERE clause)
-    await client.query(
-      `UPDATE bluebooks SET expiry_date = $1 WHERE bluebook_id = $2`,
-      [validTo, bluebook_id]
+      [renewalRes.rows[0].renewal_id, amount, payment_method || "Online"]
     );
 
     await client.query("COMMIT");
-    res.json({ message: "Payment submitted. Waiting for officer verification." });
-
+    res.json({ message: "Payment submitted! Waiting for officer verification." });
   } catch (err) {
     await client.query("ROLLBACK");
-    console.error(err);
-    res.status(500).json({ error: err.message || "Transaction failed" });
+    res.status(500).json({ error: err.message });
   } finally {
     client.release();
   }
 });
 
-
-
-// Get Renewal Info (amount calculation)
+// ============================================================
+// 3. PAYMENT PAGE INFO
+// Handles: payment.html (Loading vehicle details before paying)
+// ============================================================
 router.get("/info/:id", async (req, res) => {
-  const bluebook_id = req.params.id;
-
   try {
     const result = await pool.query(
-      `SELECT v.vehicle_type, v.plate_no
-       FROM bluebooks b
-       JOIN vehicles v ON b.vehicle_id = v.vehicle_id
+      `SELECT v.vehicle_type, v.plate_no 
+       FROM bluebooks b 
+       JOIN vehicles v ON b.vehicle_id = v.vehicle_id 
        WHERE b.bluebook_id = $1`,
-      [bluebook_id]
+      [req.params.id]
     );
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: "Not found" });
-    }
-
+    
+    if (result.rows.length === 0) return res.status(404).json({ error: "Vehicle not found" });
+    
     const type = result.rows[0].vehicle_type;
-    let amount;
+    let amount = (type === "Car") ? 15000 : (type === "Bike") ? 3000 : (type === "Scooter") ? 2500 : 5000;
 
-    if (type === "Car") amount = 3000;
-    else if (type === "Bike") amount = 1500;
-    else if (type === "Truck") amount = 5000;
-    else amount = 2500;
-
-    res.json({
-      plate_no: result.rows[0].plate_no,
-      vehicle_type: type,
-      amount
+    res.json({ 
+      plate_no: result.rows[0].plate_no, 
+      vehicle_type: type, 
+      amount: amount 
     });
-
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
-
 
 module.exports = router;
