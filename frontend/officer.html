@@ -9,9 +9,9 @@
 <body class="officer-body">
 
   <nav>
-    <h2>Officer.</h2>
+    <h2>Officer Portal</h2>
     <a href="officer.html" class="active">
-      <i class="fas fa-clipboard-list"></i> Pending Tasks
+      <i class="fas fa-clipboard-list"></i> Pending Renewals
       <span id="pendingBadge" class="nav-badge" style="display:none;">0</span>
     </a>
     <a href="javascript:void(0)" onclick="logout()" style="margin-top: auto; color: #f87171;">
@@ -114,7 +114,7 @@
         <tr>
           <td><strong>${p.plate_no}</strong></td>
           <td>${p.full_name}</td>
-          <td>${p.vehicle_type || 'Vehicle'}</td>
+          <td>${p.vehicle_type}</td>
           <td>Rs. ${p.amount}</td>
           <td style="text-align: center;">
             <button class="btn-primary" style="width:auto; padding:6px 15px;" onclick="openInspect(${p.payment_id})">Inspect</button>

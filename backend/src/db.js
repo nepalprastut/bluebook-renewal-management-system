@@ -3,7 +3,7 @@ require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 
 const { Pool } = require("pg");
 
-console.log("DB User:", process.env.DB_USER); // Debug line: Check if this prints 'postgres'
+// console.log("DB User:", process.env.DB_USER); // Debug line: Check if this prints 'postgres'
 
 const pool = new Pool({
   user: process.env.DB_USER,

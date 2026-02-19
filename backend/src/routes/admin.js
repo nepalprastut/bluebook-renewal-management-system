@@ -4,7 +4,7 @@ const pool = require("../db");
 const bcrypt = require('bcrypt');
 const saltRounds = 10;
 
-// --- 1. OFFICER REGISTRATION ---
+// OFFICER REGISTRATION 
 router.post("/register-officer", async (req, res) => {
   const { username, password, full_name, designation } = req.body;
   const client = await pool.connect();
@@ -32,7 +32,7 @@ router.post("/register-officer", async (req, res) => {
   }
 });
 
-// --- 2. SEARCH CITIZEN & VEHICLES ---
+// SEARCH CITIZEN & VEHICLES 
 router.get("/search-owner", async (req, res) => {
   const { username } = req.query;
   try {
@@ -59,15 +59,15 @@ router.get("/search-owner", async (req, res) => {
   }
 });
 
-// --- 3. DELETE VEHICLE (FIXED CHAIN DELETION) ---
+// DELETE VEHICLE (FIXED CHAIN DELETION)
 router.delete("/delete-vehicle/:id", async (req, res) => {
   const vehicleId = req.params.id;
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
 
-    // Chain: Payment -> Renewal -> Bluebook -> Vehicle
-    // 1. Delete payments associated with renewals for this vehicle
+    // Chain - Payment -> Renewal -> Bluebook -> Vehicle
+    // Delete payments associated with renewals for this vehicle
     await client.query(`
       DELETE FROM payments WHERE renewal_id IN (
         SELECT r.renewal_id FROM renewals r
@@ -75,16 +75,16 @@ router.delete("/delete-vehicle/:id", async (req, res) => {
         WHERE b.vehicle_id = $1
       )`, [vehicleId]);
 
-    // 2. Delete renewals associated with bluebooks for this vehicle
+    // Delete renewals associated with bluebooks for this vehicle
     await client.query(`
       DELETE FROM renewals WHERE bluebook_id IN (
         SELECT bluebook_id FROM bluebooks WHERE vehicle_id = $1
       )`, [vehicleId]);
 
-    // 3. Delete bluebook
+    // Delete bluebook
     await client.query("DELETE FROM bluebooks WHERE vehicle_id = $1", [vehicleId]);
 
-    // 4. Delete vehicle
+    // Delete vehicle
     const result = await client.query("DELETE FROM vehicles WHERE vehicle_id = $1", [vehicleId]);
     
     await client.query('COMMIT');
@@ -99,28 +99,41 @@ router.delete("/delete-vehicle/:id", async (req, res) => {
   }
 });
 
-// --- 4. PRICE MANAGEMENT ---
+// PRICE MANAGEMENT ---
 router.get("/prices", async (req, res) => {
   try {
     // Note: If you haven't created this table yet, see SQL below
-    const result = await pool.query("SELECT * FROM vehicle_prices ORDER BY vehicle_type ASC");
+    const result = await pool.query("SELECT * FROM tax_prices ORDER BY vehicle_type ASC");
     res.json(result.rows);
   } catch (err) {
-    res.status(500).json({ error: "Database table 'vehicle_prices' missing. Please create it." });
+    res.status(500).json({ error: "Database table 'tax_prices' missing." });
   }
 });
 
 router.post("/update-price", async (req, res) => {
   const { id, base_price } = req.body;
   try {
-    await pool.query("UPDATE vehicle_prices SET base_price = $1 WHERE id = $2", [base_price, id]);
+    // Parse values to integers to ensure DB compatibility
+    const numericId = parseInt(id);
+    const numericPrice = parseFloat(base_price);
+
+    if (isNaN(numericId) || isNaN(numericPrice)) {
+        return res.status(400).json({ error: "Invalid ID or Price format" });
+    }
+
+    await pool.query(
+        "UPDATE tax_prices SET base_price = $1 WHERE id = $2", 
+        [numericPrice, numericId]
+    );
+    
     res.json({ message: "Price updated" });
   } catch (err) {
-    res.status(500).json({ error: "Update failed" });
+    console.error(err); // Always log the error to see why it fails
+    res.status(500).json({ error: "Update failed: " + err.message });
   }
 });
 
-// --- 5. SYSTEM STATS ---
+// SYSTEM STATS
 router.get("/stats", async (req, res) => {
   try {
     const totalRevenue = await pool.query("SELECT SUM(amount) FROM payments WHERE status = 'APPROVED'");

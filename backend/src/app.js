@@ -5,14 +5,14 @@ const path = require("path");
 
 const app = express();
 
-// -------------------- MIDDLEWARE --------------------
+// MIDDLEWARE 
 app.use(cors());
 app.use(express.json());
 
-// -------------------- STATIC FRONTEND --------------------
+// STATIC FRONTEND
 app.use(express.static(path.join(__dirname, "../../frontend")));
 
-// -------------------- TEST DB ROUTE --------------------
+// TEST DB ROUTE
 // app.get("/test-db", async (req, res) => {
 //   const result = await pool.query("SELECT * FROM vehicles");
 //   res.json(result.rows);
@@ -23,7 +23,7 @@ app.use((req, res, next) => {
     next();
 });
 
-// -------------------- API ROUTES --------------------
+// API ROUTES 
 const vehicleRoutes = require("./routes/vehicles");
 app.use("/api", vehicleRoutes);
 
@@ -40,7 +40,7 @@ const adminRoutes = require("./routes/admin");
 app.use("/api/admin", adminRoutes);
 
 
-// -------------------- START SERVER --------------------
+// START SERVER
 app.listen(3000, () => {
   console.log("Server running on port 3000");
 });

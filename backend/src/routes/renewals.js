@@ -2,15 +2,12 @@ const express = require("express");
 const router = express.Router();
 const pool = require("../db");
 
-// ============================================================
 // 1. RENEWAL HISTORY PAGE
-// Handles: renewals.html
-// Fix: Shows only the latest attempt per vehicle using MAX ID
-// ============================================================
+
 router.get("/", async (req, res) => {
   const { user_id } = req.query;
   
-  // FIX: Guard against string "null" or missing ID
+  // Guard against string "null" or missing ID
   if (!user_id || user_id === "null" || isNaN(parseInt(user_id))) {
     return res.status(400).json({ error: "A valid User ID is required" });
   }
@@ -43,109 +40,86 @@ router.get("/", async (req, res) => {
   }
 });
 
-// ============================================================
-// 2. PAYMENT SUBMISSION
-// Handles: payment.html (The "Pay Now" button)
-// Fix: Prevents duplicate pending requests and enforces integer ID
-// ============================================================
+
+// PAYMENT SUBMISSION
 router.post("/pay", async (req, res) => {
   const { bluebook_id, payment_method } = req.body;
-  
-  // Guard against null/invalid IDs
-  if (!bluebook_id || bluebook_id === "null") {
-    return res.status(400).json({ error: "Invalid Bluebook ID provided." });
-  }
-
   const client = await pool.connect();
+
   try {
-    await client.query("BEGIN");
+    await client.query('BEGIN');
 
-    // Guard: Don't allow a second payment if one is already 'PENDING'
-    const pendingCheck = await client.query(`
-        SELECT p.payment_id FROM payments p
-        JOIN renewals r ON p.renewal_id = r.renewal_id
-        WHERE r.bluebook_id = $1 AND p.status = 'PENDING'
-    `, [bluebook_id]);
-
-    if (pendingCheck.rows.length > 0) {
-      throw new Error("A renewal request for this vehicle is already pending.");
-    }
-
-    // Get info for tax calculation
-    const vehicleRes = await client.query(
-      `SELECT v.vehicle_type FROM bluebooks b JOIN vehicles v ON b.vehicle_id = v.vehicle_id WHERE b.bluebook_id = $1`,
-      [bluebook_id]
+    // Fetch current price and current expiry from your specific tables
+    const vehicleData = await client.query(
+      `SELECT tp.base_price, b.expiry_date 
+       FROM bluebooks b
+       JOIN vehicles v ON b.vehicle_id = v.vehicle_id
+       JOIN tax_prices tp ON v.vehicle_type = tp.vehicle_type
+       WHERE b.bluebook_id = $1::int`,
+      [parseInt(bluebook_id)]
     );
+
+    if (vehicleData.rows.length === 0) {
+        throw new Error("Vehicle tax configuration or Bluebook not found");
+    }
     
-    if (vehicleRes.rows.length === 0) throw new Error("Vehicle not found.");
+    const amount = vehicleData.rows[0].base_price;
+    const currentExpiry = new Date(vehicleData.rows[0].expiry_date);
+    
+    // Calculate dates for the 'renewals' table
+    const validFrom = new Date(currentExpiry);
+    validFrom.setDate(validFrom.getDate() + 1);
 
-    const type = vehicleRes.rows[0].vehicle_type;
-    let amount = (type === "Car") ? 15000 : (type === "Bike") ? 3000 : (type === "Scooter") ? 2500 : (type === "Truck") ? 25000 : 5000;
-
-    const validTo = new Date();
+    const validTo = new Date(currentExpiry);
     validTo.setFullYear(validTo.getFullYear() + 1);
 
-    // Create the Renewal record
+    // Insert into Renewals table
     const renewalRes = await client.query(
       `INSERT INTO renewals (bluebook_id, renewal_date, valid_from, valid_to, total_amount) 
-       VALUES ($1, CURRENT_DATE, CURRENT_DATE, $2, $3) RETURNING renewal_id`,
-      [bluebook_id, validTo, amount]
+       VALUES ($1, CURRENT_DATE, $2, $3, $4) RETURNING renewal_id`,
+      [parseInt(bluebook_id), validFrom, validTo, amount]
     );
+    const renewalId = renewalRes.rows[0].renewal_id;
 
-    // Create the Payment record (Status starts as PENDING)
+    // Insert into Payments table
     await client.query(
       `INSERT INTO payments (renewal_id, payment_date, amount, payment_method, status) 
        VALUES ($1, CURRENT_DATE, $2, $3, 'PENDING')`,
-      [renewalRes.rows[0].renewal_id, amount, payment_method || "Online"]
+      [renewalId, amount, payment_method]
     );
 
-    await client.query("COMMIT");
-    res.json({ message: "Payment submitted! Waiting for officer verification." });
+    await client.query('COMMIT');
+    res.json({ message: "Payment submitted successfully" });
+
   } catch (err) {
-    await client.query("ROLLBACK");
-    console.error("Payment Submission Error:", err.message);
+    await client.query('ROLLBACK');
+    console.error("Payment Error:", err.message);
     res.status(500).json({ error: err.message });
   } finally {
     client.release();
   }
 });
 
-// ============================================================
-// 3. PAYMENT PAGE INFO
-// Handles: payment.html (Loading vehicle details before paying)
-// Fix: Added explicit casting to INT to prevent syntax errors
-// ============================================================
+// PAYMENT PAGE INFO
 router.get("/info/:id", async (req, res) => {
   const { id } = req.params;
-
-  // Final Guard: If the ID is missing or the literal string "null"
-  if (!id || id === "null" || id === "undefined") {
-    return res.status(400).json({ error: "Bluebook ID is missing or invalid." });
-  }
+  if (!id || id === "null") return res.status(400).json({ error: "Invalid ID" });
 
   try {
     const result = await pool.query(
-      `SELECT v.vehicle_type, v.plate_no 
+      `SELECT v.plate_no, v.vehicle_type, tp.base_price as amount
        FROM bluebooks b 
        JOIN vehicles v ON b.vehicle_id = v.vehicle_id 
-       WHERE b.bluebook_id = $1::int`, // Explicitly cast to integer
-      [id]
+       JOIN tax_prices tp ON v.vehicle_type = tp.vehicle_type 
+       WHERE b.bluebook_id = $1::int`, 
+      [parseInt(id)]
     );
     
-    if (result.rows.length === 0) return res.status(404).json({ error: "Vehicle not found" });
-    
-    const type = result.rows[0].vehicle_type;
-    // Calculation logic matching the /pay route
-    let amount = (type === "Car") ? 15000 : (type === "Bike") ? 3000 : (type === "Scooter") ? 2500 : (type === "Truck") ? 25000 : 5000;
-
-    res.json({ 
-      plate_no: result.rows[0].plate_no, 
-      vehicle_type: type, 
-      amount: amount 
-    });
+    if (result.rows.length === 0) return res.status(404).json({ error: "Vehicle or Tax Rate not found" });
+    res.json(result.rows[0]);
   } catch (err) {
-    console.error("Info Fetch Error:", err.message);
-    res.status(500).json({ error: "Internal Server Error" });
+    console.error("Info Error:", err.message);
+    res.status(500).json({ error: "Server error loading vehicle info" });
   }
 });
 

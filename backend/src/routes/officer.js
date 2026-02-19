@@ -2,11 +2,11 @@ const express = require("express");
 const router = express.Router();
 const pool = require("../db");
 
-// 1. Get List of Pending Payments
+// Get List of Pending Payments
 router.get("/pending", async (req, res) => {
   try {
     const result = await pool.query(`
-      SELECT p.payment_id, v.plate_no, o.full_name, p.amount, 
+      SELECT p.payment_id, v.plate_no, v.vehicle_type, o.full_name, p.amount, 
              p.payment_method, p.payment_date
       FROM payments p
       JOIN renewals r ON p.renewal_id = r.renewal_id
@@ -22,7 +22,7 @@ router.get("/pending", async (req, res) => {
   }
 });
 
-// 2. Get Detailed View for Inspection
+// Get Detailed View for Inspection
 router.get("/details/:paymentId", async (req, res) => {
   const { paymentId } = req.params;
   try {
@@ -46,7 +46,7 @@ router.get("/details/:paymentId", async (req, res) => {
   }
 });
 
-// 3. Approve Payment and Update Bluebook
+// Approve Payment and Update Bluebook
 router.post("/approve/:id", async (req, res) => {
   const paymentId = req.params.id;
   const officerId = req.body.officer_id;
@@ -62,7 +62,6 @@ router.post("/approve/:id", async (req, res) => {
     );
 
     // Update Bluebook table using subqueries to get the correct valid_to date
-// Inside router.post("/approve/:id", ...)
 await client.query(`
   UPDATE bluebooks 
   SET status = 'ACTIVE', 
@@ -90,7 +89,7 @@ await client.query(`
   }
 });
 
-// 4. Reject Payment with Reason
+// Reject Payment with Reason
 router.post("/reject/:id", async (req, res) => {
   const paymentId = req.params.id;
   const { officer_id, reason } = req.body;

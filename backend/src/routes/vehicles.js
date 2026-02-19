@@ -28,7 +28,6 @@ router.post("/vehicles", async (req, res) => {
     const vehicleId = vehicleRes.rows[0].vehicle_id;
 
     // CALCULATE EXPIRY: last_renewal_date + 1 year
-    // PostgreSQL handles this easily with INTERVAL
     await client.query(
       `INSERT INTO bluebooks (vehicle_id, last_renewal_date, issue_date, expiry_date, status) 
        VALUES ($1, $2, $2, ($2::date + INTERVAL '1 year'), 
@@ -52,9 +51,9 @@ router.post("/vehicles", async (req, res) => {
 router.get("/owner/vehicles", async (req, res) => {
   const { user_id } = req.query;
 
-  // 1. CRITICAL GUARD: Stop the "null" string from reaching the DB
+  // Stop the "null" string from reaching the DB
   if (!user_id || user_id === "null" || user_id === "undefined") {
-    console.error("Blocked invalid user_id query");
+    // console.error("Blocked invalid user_id query");
     return res.status(400).json({ error: "User ID is required" });
   }
 
@@ -68,7 +67,7 @@ router.get("/owner/vehicles", async (req, res) => {
        FROM vehicles v
        JOIN bluebooks b ON v.vehicle_id = b.vehicle_id
        JOIN vehicle_owners o ON v.owner_id = o.owner_id
-       WHERE o.user_id = $1::int`, // Cast to int here too
+       WHERE o.user_id = $1::int`, // Cast to int
       [user_id]
     );
     res.json(result.rows);

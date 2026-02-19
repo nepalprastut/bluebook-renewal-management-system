@@ -67,19 +67,26 @@
     }
 
 async function updatePrice(id) {
-  const newPrice = document.getElementById(`price_${id}`).value;
+  const priceInput = document.getElementById(`price_${id}`);
+  if (!priceInput) return alert("Input field not found");
+  
+  const newPrice = priceInput.value;
   
   try {
     const res = await fetch(`/api/admin/update-price`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id, base_price: newPrice })
+      body: JSON.stringify({ 
+        id: parseInt(id), 
+        base_price: parseFloat(newPrice) 
+      })
     });
     
     const result = await res.json();
     if (res.ok) {
       alert("Price updated successfully!");
-      loadPrices(); // Refresh data
+      // Don't reload everything and highlight the box green
+      priceInput.style.borderColor = "#16a34a";
     } else {
       alert(result.error || "Update failed");
     }
