@@ -5,6 +5,56 @@
   <title>Admin Dashboard - Bluebook</title>
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <style>
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin: 0 0 32px;
+    }
+
+    .stat-card {
+      background: white;
+      border-radius: 10px;
+      padding: 18px 16px;
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+      border: 1px solid #e5e7eb;
+      transition: all 0.2s ease;
+      text-align: center;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .stat-card h3 {
+      margin: 0 0 8px 0;
+      font-size: 0.95rem;
+      font-weight: 500;
+      color: #6b7280;
+    }
+
+    .stat-value {
+      margin: 0;
+      font-size: 2.4rem;
+      font-weight: 700;
+      line-height: 1;
+      color: #111827;
+    }
+
+    @media (max-width: 768px) {
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+      .stat-value {
+        font-size: 2.1rem;
+      }
+      .stat-card {
+        padding: 16px 14px;
+      }
+    }
+  </style>
 </head>
 <body class="admin-body">
 
@@ -23,18 +73,18 @@
       <p style="color: var(--text-muted);">Real-time monitoring of the Bluebook Renewal System.</p>
     </header>
 
-    <div class="stats-grid" style="margin-bottom: 40px;">
+    <div class="stats-grid">
       <div class="stat-card">
         <h3>Total Revenue</h3>
-        <p id="statRev" style="color: #16a34a;">Rs. 0</p>
+        <p id="statRev" class="stat-value" style="color: #16a34a;">Rs. 0</p>
       </div>
       <div class="stat-card">
         <h3>Users</h3>
-        <p id="statUsers">0</p>
+        <p id="statUsers" class="stat-value">0</p>
       </div>
       <div class="stat-card">
         <h3>Pending Renewals</h3>
-        <p id="statPending" style="color: #ef4444;">0</p>
+        <p id="statPending" class="stat-value" style="color: #ef4444;">0</p>
       </div>
     </div>
 
@@ -66,17 +116,26 @@
       try {
         const res = await fetch('/api/admin/stats');
         const data = await res.json();
+
         const formattedRev = new Intl.NumberFormat('en-NP', {
-          style: 'currency', currency: 'NPR', maximumFractionDigits: 0
+          style: 'currency', 
+          currency: 'NPR', 
+          maximumFractionDigits: 0
         }).format(data.revenue || 0);
 
         document.getElementById("statRev").innerText = formattedRev;
         document.getElementById("statUsers").innerText = data.users || 0;
         document.getElementById("statPending").innerText = data.pending || 0;
-      } catch (err) { console.error("Failed to load real stats:", err); }
+      } catch (err) {
+        console.error("Failed to load real stats:", err);
+      }
     }
 
-    function logout() { sessionStorage.clear(); window.location.replace("login.html"); }
+    function logout() { 
+      sessionStorage.clear(); 
+      window.location.replace("login.html"); 
+    }
+
     loadStats();
   </script>
 </body>
