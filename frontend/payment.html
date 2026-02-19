@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Payment - Bluebook</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+  <nav>
+    <h2>Bluebook.</h2>
+    <a href="index.html"><i class="fas fa-car"></i> Vehicles</a>
+    <a href="renewals.html"><i class="fas fa-history"></i> History</a>
+    <a href="javascript:void(0)" onclick="logout()" style="margin-top: auto; color: #f87171;"><i class="fas fa-sign-out-alt"></i> Logout</a>
+  </nav>
+
+  <main>
+    <div style="max-width: 500px; margin: 0 auto;">
+      <header style="margin-bottom: 30px;">
+        <h1>Secure Payment</h1>
+        <p style="color: var(--text-muted);">Complete your renewal transaction.</p>
+      </header>
+
+      <div class="card" style="padding: 32px;">
+        <div style="background: #f8fafc; padding: 20px; border-radius: 12px; margin-bottom: 24px;">
+            <p style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Vehicle Plate</p>
+            <p id="display_plate" style="font-size: 1.2rem; font-weight: 700; margin-bottom: 15px;">Loading...</p>
+            
+            <p style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Total Tax Amount</p>
+            <p id="display_amount" style="font-size: 1.5rem; font-weight: 800; color: var(--primary);">Rs. 0.00</p>
+        </div>
+
+        <label style="font-size: 0.85rem; font-weight: 600;">Payment Gateway</label>
+        <select id="paymentMethod">
+          <option value="Online">eSewa / Khalti / Mobile Banking</option>
+          <option value="Cash">Cash at Department Counter</option>
+        </select>
+
+        <button onclick="makePayment()" style="margin-top: 10px;">Confirm & Pay</button>
+      </div>
+    </div>
+  </main>
+
+  <div id="successModal" class="modal">
+    <div class="success-card">
+      <div class="success-icon-large"><i class="fas fa-check"></i></div>
+      <h2>Request Submitted</h2>
+      <p>Your payment has been logged. An officer will verify your details shortly.</p>
+      
+      <div class="receipt-summary">
+        <div class="receipt-row"><span>Status</span><span style="color:#ca8a04;">UNDER REVIEW</span></div>
+        <div class="receipt-row"><span>Estimated Time</span><span>24-48 Hours</span></div>
+      </div>
+
+      <button onclick="window.location.href='renewals.html'" style="width: 100%;">View History</button>
+    </div>
+  </div>
+
+ <script>
+    const params = new URLSearchParams(window.location.search);
+    const bluebookId = params.get("bluebook_id");
+
+    if (!bluebookId || bluebookId === "null") window.location.replace("index.html");
+
+    async function loadInfo() {
+        try {
+            const res = await fetch(`/api/renewals/info/${bluebookId}`);
+            const data = await res.json();
+            document.getElementById("display_plate").innerText = data.plate_no;
+            document.getElementById("display_amount").innerText = `Rs. ${data.amount}`;
+        } catch (err) { console.error(err); }
+    }
+
+    async function makePayment() {
+        const btn = document.querySelector('button');
+        btn.disabled = true; btn.innerText = "Processing...";
+
+        try {
+            const res = await fetch('/api/renewals/pay', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    bluebook_id: bluebookId,
+                    payment_method: document.getElementById("paymentMethod").value
+                })
+            });
+            if (res.ok) {
+                document.getElementById("successModal").style.display = "flex";
+            } else {
+                alert("Payment failed"); btn.disabled = false; btn.innerText = "Confirm & Pay";
+            }
+        } catch (err) { btn.disabled = false; }
+    }
+
+    function logout() { sessionStorage.clear(); window.location.replace("login.html"); }
+    loadInfo();
+</script>
+</body>
+</html>

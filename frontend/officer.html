@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Officer Portal - Bluebook</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="officer-body">
+
+  <nav>
+    <h2>Officer Portal</h2>
+    <a href="officer.html" class="active">
+      <i class="fas fa-clipboard-list"></i> Pending Renewals
+      <span id="pendingBadge" class="nav-badge" style="display:none;">0</span>
+    </a>
+    <a href="javascript:void(0)" onclick="logout()" style="margin-top: auto; color: #f87171;">
+      <i class="fas fa-sign-out-alt"></i> Logout
+    </a>
+  </nav>
+
+  <main>
+    <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+      <div>
+        <h1>Verification Queue</h1>
+        <p style="color: var(--text-muted);">Review and approve vehicle renewal requests.</p>
+      </div>
+    </header>
+
+    <div class="card">
+      <table>
+        <thead>
+          <tr>
+            <th>Plate No</th>
+            <th>Owner Name</th>
+            <th>Type</th>
+            <th>Amount</th>
+            <th style="text-align: center;">Action</th>
+          </tr>
+        </thead>
+        <tbody id="paymentTable"></tbody>
+      </table>
+    </div>
+  </main>
+
+  <div id="inspectModal" class="modal">
+    <div class="inspection-modal">
+      <div class="inspection-header">
+          <div>
+              <h2 id="m_plate">Inspection</h2>
+              <span id="m_type_badge" class="status-pill pill-pending">Type</span>
+          </div>
+          <button onclick="closeModal()" class="close-btn">&times;</button>
+      </div>
+
+      <div class="inspection-body">
+        <div class="info-section">
+          <div class="info-block">
+            <h4><i class="fas fa-user-circle"></i> Owner Details</h4>
+            <p><strong>Name:</strong> <span id="m_owner"></span></p>
+            <p><strong>ID:</strong> <span id="m_citizen"></span></p>
+            <p><strong>Contact:</strong> <span id="m_mobile"></span></p>
+          </div>
+          <div class="info-block">
+            <h4><i class="fas fa-tools"></i> Technical Specs</h4>
+            <p><strong>Engine:</strong> <span id="m_engine"></span></p>
+            <p><strong>Chassis:</strong> <span id="m_chassis"></span></p>
+          </div>
+        </div>
+
+        <div class="verification-section">
+          <h4><i class="fas fa-file-signature"></i> Checklist</h4>
+          <div class="checklist">
+            <label class="check-container">
+              <input type="checkbox" id="c1"> <span class="checkmark"></span>
+              Identity & Vehicle Match
+            </label>
+            <label class="check-container">
+              <input type="checkbox" id="c2"> <span class="checkmark"></span>
+              Payment Verification
+            </label>
+            <label class="check-container">
+              <input type="checkbox" id="c3"> <span class="checkmark"></span>
+              Registry Clearance
+            </label>
+          </div>
+
+          <div id="rejectionArea" style="display: none; margin-top: 15px;">
+            <textarea id="rej_reason" rows="3" placeholder="Reason for rejection..."></textarea>
+            <button onclick="submitReject()" class="btn-approve-full" style="background:#dc2626; margin-top:10px;">Confirm Rejection</button>
+          </div>
+
+          <div id="mainBtns" style="margin-top:20px;">
+            <button class="btn-approve-full" onclick="submitApprove()">Approve Renewal</button>
+            <button class="btn-reject-text" onclick="showRejection()">Reject Request</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const officer_id = sessionStorage.getItem("user_id");
+    let activeId = null;
+
+    if (sessionStorage.getItem("role") !== "OFFICER") window.location.replace("login.html");
+
+    async function loadPending() {
+      const res = await fetch("/api/officer/pending");
+      const data = await res.json();
+      const table = document.getElementById("paymentTable");
+      
+      table.innerHTML = data.map(p => `
+        <tr>
+          <td><strong>${p.plate_no}</strong></td>
+          <td>${p.full_name}</td>
+          <td>${p.vehicle_type}</td>
+          <td>Rs. ${p.amount}</td>
+          <td style="text-align: center;">
+            <button class="btn-primary" style="width:auto; padding:6px 15px;" onclick="openInspect(${p.payment_id})">Inspect</button>
+          </td>
+        </tr>
+      `).join('');
+      
+      const badge = document.getElementById("pendingBadge");
+      badge.innerText = data.length;
+      badge.style.display = data.length > 0 ? "inline-block" : "none";
+    }
+
+    async function openInspect(id) {
+      activeId = id;
+      const res = await fetch(`/api/officer/details/${id}`);
+      const p = await res.json();
+
+      document.getElementById("m_plate").innerText = p.plate_no;
+      document.getElementById("m_owner").innerText = p.full_name;
+      document.getElementById("m_citizen").innerText = p.citizenship_no;
+      document.getElementById("m_mobile").innerText = p.mobile_no;
+      document.getElementById("m_engine").innerText = p.engine_no;
+      document.getElementById("m_chassis").innerText = p.chassis_no;
+      document.getElementById("m_type_badge").innerText = p.vehicle_type;
+
+      ["c1", "c2", "c3"].forEach(cid => document.getElementById(cid).checked = false);
+      document.getElementById("rejectionArea").style.display = "none";
+      document.getElementById("mainBtns").style.display = "block";
+      document.getElementById("inspectModal").style.display = "flex";
+    }
+
+    function closeModal() { document.getElementById("inspectModal").style.display = "none"; }
+    function showRejection() { document.getElementById("rejectionArea").style.display = "block"; document.getElementById("mainBtns").style.display = "none"; }
+
+    async function submitApprove() {
+      if (!document.getElementById("c1").checked || !document.getElementById("c2").checked || !document.getElementById("c3").checked) return alert("Please check all boxes.");
+      await fetch(`/api/officer/approve/${activeId}`, { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({officer_id}) });
+      closeModal(); loadPending();
+    }
+
+    async function submitReject() {
+      const reason = document.getElementById("rej_reason").value;
+      if(!reason) return alert("Please provide a reason.");
+      await fetch(`/api/officer/reject/${activeId}`, { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({officer_id, reason}) });
+      closeModal(); loadPending();
+    }
+
+    function logout() { sessionStorage.clear(); window.location.replace("login.html"); }
+    loadPending();
+  </script>
+</body>
+</html>
