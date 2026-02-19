@@ -5,49 +5,13 @@
   <title>My Vehicles - Bluebook</title>
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-  <style>
-    body {
-      margin: 0;
-      visibility: hidden;          
-      background: #f8fafc;
-    }
-    #loading-screen {
-      position: fixed;
-      inset: 0;
-      background: #f8fafc;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-family: system-ui, sans-serif;
-      font-size: 1.1rem;
-      color: #64748b;
-      z-index: 9999;
-    }
-  </style>
 </head>
 <body>
-
-  <script>
-    const user_id = sessionStorage.getItem("user_id");
-    const role    = sessionStorage.getItem("role");
-
-    if (!user_id || user_id === "null" || user_id === "" || role !== "OWNER") {
-      // Redirect immediately 
-      window.location.replace("login.html");
-    }
-  </script>
-
-  <div id="loading-screen">
-    Loading your dashboard...
-  </div>
-
   <nav>
     <h2>Bluebook.</h2>
     <a href="index.html" class="active"><i class="fas fa-car"></i> Vehicles</a>
     <a href="renewals.html"><i class="fas fa-history"></i> History</a>
-    <a href="javascript:void(0)" onclick="logout()" style="margin-top: auto; color: #f87171;">
-      <i class="fas fa-sign-out-alt"></i> Logout
-    </a>
+    <a href="javascript:void(0)" onclick="logout()" style="margin-top: auto; color: #f87171;"><i class="fas fa-sign-out-alt"></i> Logout</a>
   </nav>
 
   <main>
@@ -59,21 +23,20 @@
       <button onclick="location.href='add_vehicle.html'" style="width: auto; padding: 10px 24px;">+ Add Vehicle</button>
     </header>
 
-    <div class="stats-grid">
-      <div class="stat-card">
-        <h3>Total Vehicles</h3>
-        <p id="totalVehicles">0</p>
-      </div>
-      <div class="stat-card">
-        <h3>Active</h3>
-        <p id="activeVehicles" style="color: var(--primary);">0</p>
-      </div>
-      <div class="stat-card">
-        <h3>Action Required</h3>
-        <p id="actionRequired" style="color: #ef4444;">0</p>
-      </div>
-    </div>
-
+<div class="stats-grid">
+  <div class="stat-card">
+    <h3>Total Vehicles</h3>
+    <p id="totalVehicles">0</p>
+  </div>
+  <div class="stat-card">
+    <h3>Active</h3>
+    <p id="activeVehicles" style="color: var(--primary);">0</p>
+  </div>
+  <div class="stat-card">
+    <h3>Action Required</h3>
+    <p id="actionRequired" style="color: #ef4444;">0</p>
+  </div>
+</div>
     <div class="card">
       <table>
         <thead>
@@ -84,47 +47,37 @@
             <th style="text-align: center;">Status</th>
           </tr>
         </thead>
-        <tbody id="vehicleTable"></tbody>
+        <tbody id="vehicleTable">
+          </tbody>
       </table>
     </div>
   </main>
 
   <script>
-    // Auth guard 
-    if (!sessionStorage.getItem("user_id") || 
-        sessionStorage.getItem("role") !== "OWNER") {
+    // Prevents the page from loading and crashing backend if session is null
+    const user_id = sessionStorage.getItem("user_id");
+    const role = sessionStorage.getItem("role");
+
+    if (!user_id || user_id === "null" || role !== "OWNER") {
       window.location.replace("login.html");
     }
 
-    function hideLoader() {
-      const loader = document.getElementById("loading-screen");
-      if (loader) loader.remove();
-      document.body.style.visibility = "visible";
-    }
-
     async function loadDashboard() {
-      try {
-        const res = await fetch('/api/owner/stats');
-        if (!res.ok) throw new Error("Stats failed");
-        const data = await res.json();
-        document.getElementById('totalVehicles').innerText = data.total || 0;
-        document.getElementById('activeVehicles').innerText = data.active || 0;
-        document.getElementById('actionRequired').innerText = data.pending || 0;
-      } catch (err) {
-        console.error("Dashboard stats error:", err);
-      }
-    }
+  const res = await fetch('/api/owner/stats'); 
+  const data = await res.json();
+  
+  document.getElementById('totalVehicles').innerText = data.total || 0;
+  document.getElementById('activeVehicles').innerText = data.active || 0;
+  document.getElementById('actionRequired').innerText = data.pending || 0;
+}
 
     async function loadVehicles() {
       try {
-        const user_id = sessionStorage.getItem("user_id");
         const res = await fetch(`/api/owner/vehicles?user_id=${user_id}`);
         
         if (!res.ok) {
-          if (res.status === 401 || res.status === 400) {
-            window.location.replace("login.html");
-          }
-          return;
+            if (res.status === 400) window.location.replace("login.html");
+            return;
         }
 
         const data = await res.json();
@@ -139,15 +92,18 @@
           const isExpired = expiry !== "N/A" && expiry < today;
           let statusHtml = "";
 
+          // If a request is PENDING, show PENDING badge regardless of expiry
           if (v.latest_payment_status === 'PENDING') {
             statusHtml = `<span style="color:#92400e; background:#fef3c7; padding:6px 14px; border-radius:20px; font-size:12px; font-weight:600; border: 1px solid #fde68a;">PENDING</span>`;
             counts.alert++;
           } 
+          // If EXPIRED (and not pending), show the Renew button
           else if (isExpired || expiry === "N/A") {
             statusHtml = `<button onclick="window.location.href='payment.html?bluebook_id=${v.bluebook_id}'" 
                           style="padding:6px 16px; font-size:12px; width:auto; background: var(--primary);">Renew Now</button>`;
             counts.alert++;
           } 
+          // Otherwise, it's ACTIVE
           else {
             statusHtml = `<span style="color:#166534; background:#dcfce7; padding:6px 14px; border-radius:20px; font-size:12px; font-weight:600; border: 1px solid #bbf7d0;">ACTIVE</span>`;
             counts.active++;
@@ -175,14 +131,8 @@
       window.location.replace("login.html"); 
     }
 
-    // Start loading and show content when ready
-    async function init() {
-      await Promise.all([loadDashboard(), loadVehicles()]);
-      hideLoader();
-    }
-
-    // Kick off
-    init();
+    // Load data on start
+    loadVehicles();
   </script>
 </body>
 </html>
