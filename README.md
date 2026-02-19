@@ -2,19 +2,19 @@
 
 A full-stack web application for managing vehicle bluebook expiry, renewals, payments, and officer approvals.
 
-🔗 **Live Demo:**  
+**Live Demo:**  
 https://bluebook-renewal-management-system.onrender.com
 
 ---
 
-## 📌 Overview
+## Overview
 
-This project simulates a real-world vehicle bluebook management workflow. It allows vehicle owners to register vehicles, renew expired bluebooks, and make payments. Renewal requests require officer approval before activation.
+This project simulates a real-world vehicle bluebook renewal workflow. It allows vehicle owners to register vehicles, renew expired bluebooks, and make payments. Renewal requests require officer approval before activation.
 
 
 ---
 
-## 🛠 Tech Stack
+## Tech Stack
 
 - **Frontend:** HTML, CSS, JavaScript  
 - **Backend:** Node.js, Express  
@@ -23,7 +23,7 @@ This project simulates a real-world vehicle bluebook management workflow. It all
 
 ---
 
-## ⚙️ Features
+## Features
 
 - User authentication with roles (Owner, Officer, Admin)
 - Add and view registered vehicles
@@ -36,7 +36,7 @@ This project simulates a real-world vehicle bluebook management workflow. It all
 
 ---
 
-## 🗃 Database Structure
+## Database Structure
 
 Main tables:
 
@@ -93,17 +93,18 @@ http://localhost:3000
 
 ---
 
-## 🧪 Test Flow
+## Test Flow
 
 1. Login as Owner → Add vehicle  
 2. If expired → Click Renew  
 3. Simulate payment  
+4. Create a user with ADMIN role using SQL query
 4. Login as Officer → Approve payment  
 5. Bluebook status updates to ACTIVE  
 
 ---
 
-## 🌍 Deployment
+## Deployment
 
 - Backend, Frontend and PostgreSQL deployed on Render
 - Environment variables configured in Render dashboard
