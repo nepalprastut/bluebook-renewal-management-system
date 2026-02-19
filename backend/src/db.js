@@ -41,23 +41,23 @@ require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 
 const { Pool } = require("pg");
 
-// This helps us debug in the Render logs
+// debug render logs
 console.log("Attempting to connect to DB via DATABASE_URL...");
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: {
-    rejectUnauthorized: false // MUST be here for Render
+    rejectUnauthorized: false 
   }
 });
 
-// Add a one-time connection test to see WHERE we are connected
+// check connection
 pool.query('SELECT current_database(), current_user', (err, res) => {
   if (err) {
-    console.error('❌ DB CONNECTION ERROR:', err.message);
+    console.error('DB CONNECTION ERROR:', err.message);
   } else {
-    console.log(`✅ CONNECTED TO DATABASE: ${res.rows[0].current_database}`);
-    console.log(`✅ CONNECTED AS USER: ${res.rows[0].current_user}`);
+    console.log(`CONNECTED TO DATABASE: ${res.rows[0].current_database}`);
+    console.log(`CONNECTED AS USER: ${res.rows[0].current_user}`);
   }
 });
 
