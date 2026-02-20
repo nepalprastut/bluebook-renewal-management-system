@@ -1,10 +1,10 @@
-# 🗄️ Database Schema Documentation
+# Database Schema Documentation
 
 This document provides a detailed breakdown of the PostgreSQL relational schema used in the **Bluebook Renewal Management System**. The database is designed to maintain high data integrity through foreign key constraints and specific data types.
 
 ---
 
-## 🗺️ Entity Relationship Overview
+## Entity Relationship Overview
 
 The database consists of 8 interconnected tables. The core of the system revolves around the `users` table, which branches into `vehicle_owners` and `officers` to separate concerns based on user roles.
 
@@ -12,7 +12,7 @@ The database consists of 8 interconnected tables. The core of the system revolve
 
 ---
 
-## 📋 Table Definitions
+## Table Definitions
 
 ### 1. `users`
 Stores core authentication data for both Owners and Admins.
@@ -84,7 +84,7 @@ Extended profile for administrative users.
 
 ---
 
-## 🔄 Key Data Flows
+## Key Data Flows
 
 ### The Renewal Trigger
 When an Officer updates a `renewals.status` to **'APPROVED'**, a backend transaction is triggered to:
@@ -95,4 +95,3 @@ When an Officer updates a `renewals.status` to **'APPROVED'**, a backend transac
 The schema implements `ON DELETE CASCADE` (or manual deletion logic) to ensure that if a user is removed, their associated owner profile and vehicle records are handled without leaving orphaned data.
 
 ---
-*Generated for the Bluebook Renewal Management System v1.0*
