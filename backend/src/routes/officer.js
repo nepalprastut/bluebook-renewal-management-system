@@ -113,4 +113,19 @@ router.get("/pending-count", async (req, res) => {
   }
 });
 
+router.get("/lookup", async (req, res) => {
+    const { plate } = req.query;
+    try {
+        const result = await pool.query(`
+            SELECT v.plate_no, v.vehicle_type, b.expiry_date, b.status 
+            FROM vehicles v 
+            JOIN bluebooks b ON v.vehicle_id = b.vehicle_id 
+            WHERE v.plate_no = $1`, [plate]);
+        if (result.rows.length === 0) return res.status(404).json({ error: "Not found" });
+        res.json(result.rows[0]);
+    } catch (err) {
+        res.status(500).json({ error: "Lookup failed" });
+    }
+});
+
 module.exports = router;
