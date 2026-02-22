@@ -17,18 +17,8 @@
         margin-top: 20px;
         transition: 0.3s;
     }
-    .btn-danger-outline:hover {
-        background: #ef4444;
-        color: white;
-    }
-    .role-badge {
-        font-size: 11px;
-        padding: 2px 8px;
-        border-radius: 12px;
-        text-transform: uppercase;
-        font-weight: bold;
-        margin-left: 10px;
-    }
+    .btn-danger-outline:hover { background: #ef4444; color: white; }
+    .role-badge { font-size: 11px; padding: 2px 8px; border-radius: 12px; text-transform: uppercase; font-weight: bold; margin-left: 10px; }
     .badge-owner { background: #dcfce7; color: #166534; }
     .badge-officer { background: #fef3c7; color: #92400e; }
   </style>
@@ -59,7 +49,6 @@
 
     <div id="resultArea" style="display: none;">
         <div style="display: grid; grid-template-columns: 320px 1fr; gap: 25px;">
-            
             <div class="card" style="height: fit-content;">
                 <div style="display: flex; align-items: center; justify-content: space-between;">
                     <h3 id="prof_name">User Name</h3>
@@ -67,10 +56,7 @@
                 </div>
                 <p id="prof_username" style="color: var(--text-muted); margin-bottom: 20px;">@username</p>
                 <div id="profileDetails" class="profile-data"></div>
-                
-                <button id="deleteUserBtn" class="btn-danger-outline" onclick="deleteUser()">
-                    <i class="fas fa-user-slash"></i> Delete Profile
-                </button>
+                <button id="deleteUserBtn" class="btn-danger-outline" onclick="deleteUser()"><i class="fas fa-user-slash"></i> Delete Profile</button>
             </div>
 
             <div class="card" id="assetCard">
@@ -92,53 +78,39 @@
             </div>
             
             <div class="card" id="officerNote" style="display: none; justify-content: center; align-items: center; text-align: center;">
-                <div>
-                    <i class="fas fa-user-shield" style="font-size: 40px; color: var(--primary); margin-bottom: 15px;"></i>
-                    <p style="color: var(--text-muted);">This user is registered as an Officer and does not have linked vehicle assets.</p>
-                </div>
+                <div><i class="fas fa-user-shield" style="font-size: 40px; color: var(--primary); margin-bottom: 15px;"></i><p>Officer accounts do not have linked vehicle assets.</p></div>
             </div>
-
         </div>
     </div>
   </main>
 
   <script>
     if (sessionStorage.getItem("role") !== "ADMIN") window.location.replace("login.html");
-
     let activeUserId = null;
 
     async function performSearch() {
       const query = document.getElementById("searchUser").value;
       const errorMsg = document.getElementById("errorMsg");
       const resultArea = document.getElementById("resultArea");
-
       if (!query) return;
       errorMsg.innerText = "";
       
       try {
-        // Updated to the new global search endpoint
         const res = await fetch(`/api/admin/search-any-user?query=${query}`);
         const data = await res.json();
-        
         if (!res.ok || data.length === 0) {
-          errorMsg.innerText = "No user found with that name/username.";
+          errorMsg.innerText = "No user found.";
           resultArea.style.display = "none";
           return;
         }
-
-        // We take the first match for the detail view
         const user = data[0];
         activeUserId = user.user_id;
-
-        // Update Profile Card
         document.getElementById("prof_name").innerText = user.full_name;
         document.getElementById("prof_username").innerText = `@${user.username}`;
-        
         const roleSpan = document.getElementById("prof_role");
         roleSpan.innerText = user.role;
         roleSpan.className = `role-badge badge-${user.role.toLowerCase()}`;
 
-        // Update Details based on role
         if (user.role === 'OWNER') {
             document.getElementById("profileDetails").innerHTML = `<p><strong>Mobile:</strong> ${user.mobile_no || 'N/A'}</p>`;
             document.getElementById("assetCard").style.display = "block";
@@ -149,56 +121,36 @@
             document.getElementById("assetCard").style.display = "none";
             document.getElementById("officerNote").style.display = "flex";
         }
-
         resultArea.style.display = "block";
-      } catch (err) {
-        errorMsg.innerText = "Connection error.";
-      }
+      } catch (err) { errorMsg.innerText = "Connection error."; }
     }
 
     async function loadOwnerVehicles(userId) {
-        // We reuse your existing search logic for specific owner assets
-        const res = await fetch(`/api/admin/search-owner?username=${document.getElementById("prof_username").innerText.replace('@', '')}`);
-        const data = await res.json();
-        
-        if (data.vehicles) {
-            document.getElementById("vehicleCount").innerText = data.vehicles.length + " Found";
-            document.getElementById("vehicleList").innerHTML = data.vehicles.map(v => `
+        try {
+            const res = await fetch(`/api/admin/vehicles-by-user/${userId}`);
+            const data = await res.json();
+            const list = document.getElementById("vehicleList");
+            document.getElementById("vehicleCount").innerText = data.length + " Found";
+            list.innerHTML = data.length > 0 ? data.map(v => `
               <tr>
                 <td><strong>${v.plate_no}</strong></td>
                 <td>${v.vehicle_type}</td>
-                <td><span class="status-pill ${v.status==='ACTIVE'?'pill-approved':'pill-pending'}">${v.status || 'EXPIRED'}</span></td>
-                <td style="text-align: right;">
-                    <button class="btn-delete" onclick="deleteVehicle(${v.vehicle_id})">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </td>
-              </tr>
-            `).join('');
-        }
+                <td><span class="status-pill ${v.status==='ACTIVE'?'pill-approved':'pill-pending'}">${v.status}</span></td>
+                <td style="text-align: right;"><button class="btn-delete" onclick="deleteVehicle(${v.vehicle_id})"><i class="fas fa-trash"></i></button></td>
+              </tr>`).join('') : `<tr><td colspan="4" style="text-align:center;">No vehicles.</td></tr>`;
+        } catch (err) { console.error(err); }
     }
 
     async function deleteUser() {
-        if (!confirm("CRITICAL ACTION: Are you sure you want to delete this USER PROFILE? This will remove all their login access and profile data permanently.")) return;
-
-        try {
-            const res = await fetch(`/api/admin/users/${activeUserId}`, { method: 'DELETE' });
-            if (res.ok) {
-                alert("User profile deleted.");
-                location.reload();
-            } else {
-                const err = await res.json();
-                alert(err.error);
-            }
-        } catch (err) { alert("Server error."); }
+        if (!confirm("Permanently delete this user profile?")) return;
+        const res = await fetch(`/api/admin/users/${activeUserId}`, { method: 'DELETE' });
+        if (res.ok) { alert("User deleted."); location.reload(); }
     }
 
-    async function deleteVehicle(vehicleId) {
-        if (!confirm("Delete this vehicle record?")) return;
-        try {
-            const res = await fetch(`/api/admin/delete-vehicle/${vehicleId}`, { method: 'DELETE' });
-            if (res.ok) { alert("Vehicle deleted."); performSearch(); }
-        } catch (err) { alert("Error."); }
+    async function deleteVehicle(id) {
+        if (!confirm("Delete vehicle?")) return;
+        const res = await fetch(`/api/admin/delete-vehicle/${id}`, { method: 'DELETE' });
+        if (res.ok) performSearch();
     }
 
     function logout() { sessionStorage.clear(); window.location.replace("login.html"); }

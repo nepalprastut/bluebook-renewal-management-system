@@ -52,6 +52,18 @@ router.get("/search-any-user", async (req, res) => {
   }
 });
 
+router.get("/vehicles-by-user/:id", async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT v.vehicle_id, v.plate_no, v.vehicle_type, b.status
+            FROM vehicles v
+            LEFT JOIN bluebooks b ON v.vehicle_id = b.vehicle_id
+            WHERE v.owner_id = (SELECT owner_id FROM vehicle_owners WHERE user_id = $1)
+        `, [req.params.id]);
+        res.json(result.rows);
+    } catch (err) { res.status(500).json({ error: "Fetch failed" }); }
+});
+
 // DELETE USER (Safe Transaction)
 router.delete('/users/:id', async (req, res) => {
     const { id } = req.params;
