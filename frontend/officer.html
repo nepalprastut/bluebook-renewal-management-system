@@ -25,7 +25,22 @@
         <h1>Verification Queue</h1>
         <p style="color: var(--text-muted);">Review and approve vehicle renewal requests.</p>
       </div>
+      <div class="search-box" style="display: flex; gap: 10px;">
+        <input type="text" id="lookupPlate" placeholder="Quick Plate Lookup..." style="padding: 8px; border-radius: 6px; border: 1px solid #ddd;">
+        <button onclick="quickLookup()" class="btn-primary" style="width: auto; padding: 0 15px;"><i class="fas fa-search"></i></button>
+      </div>
     </header>
+
+    <div class="stats-grid" style="margin-bottom: 25px;">
+        <div class="stat-card">
+            <h3>Pending Tasks</h3>
+            <p id="statPending">0</p>
+        </div>
+        <div class="stat-card">
+            <h3>Verified Today</h3>
+            <p id="statToday" style="color: var(--primary);">0</p>
+        </div>
+    </div>
 
     <div class="card">
       <table>
@@ -110,7 +125,7 @@
       const data = await res.json();
       const table = document.getElementById("paymentTable");
       
-      table.innerHTML = data.map(p => `
+      table.innerHTML = data.length > 0 ? data.map(p => `
         <tr>
           <td><strong>${p.plate_no}</strong></td>
           <td>${p.full_name}</td>
@@ -120,11 +135,22 @@
             <button class="btn-primary" style="width:auto; padding:6px 15px;" onclick="openInspect(${p.payment_id})">Inspect</button>
           </td>
         </tr>
-      `).join('');
+      `).join('') : `<tr><td colspan="5" style="text-align:center; padding:30px; color:#999;">No pending renewals in queue.</td></tr>`;
       
+      document.getElementById("statPending").innerText = data.length;
       const badge = document.getElementById("pendingBadge");
       badge.innerText = data.length;
       badge.style.display = data.length > 0 ? "inline-block" : "none";
+    }
+
+    // NEW: Quick Lookup Function
+    async function quickLookup() {
+        const plate = document.getElementById("lookupPlate").value;
+        if(!plate) return;
+        const res = await fetch(`/api/officer/lookup?plate=${plate}`);
+        const data = await res.json();
+        if(data.error) return alert("Vehicle not found.");
+        alert(`VEHICLE INFO\nPlate: ${data.plate_no}\nType: ${data.vehicle_type}\nExpiry: ${data.expiry_date.split('T')[0]}\nStatus: ${data.status}`);
     }
 
     async function openInspect(id) {
@@ -152,7 +178,10 @@
     async function submitApprove() {
       if (!document.getElementById("c1").checked || !document.getElementById("c2").checked || !document.getElementById("c3").checked) return alert("Please check all boxes.");
       await fetch(`/api/officer/approve/${activeId}`, { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({officer_id}) });
-      closeModal(); loadPending();
+      closeModal(); 
+      loadPending();
+      // Incremet fake "Verified Today" for presentation effect
+      document.getElementById("statToday").innerText = parseInt(document.getElementById("statToday").innerText) + 1;
     }
 
     async function submitReject() {
