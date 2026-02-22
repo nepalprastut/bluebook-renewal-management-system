@@ -8,55 +8,65 @@
 </head>
 <body class="officer-body">
 
-  <nav>
+<nav>
     <h2>Officer Portal</h2>
-    <a href="officer.html" class="active">
-      <i class="fas fa-clipboard-list"></i> Pending Renewals
-      <span id="pendingBadge" class="nav-badge" style="display:none;">0</span>
-    </a>
-    <a href="javascript:void(0)" onclick="logout()" style="margin-top: auto; color: #f87171;">
-      <i class="fas fa-sign-out-alt"></i> Logout
-    </a>
-  </nav>
+    <div class="nav-section">
+      <small>MAIN MENU</small>
+      <a href="officer.html" class="active">
+        <i class="fas fa-clipboard-list"></i> Pending Renewals
+        <span id="pendingBadge" class="nav-badge" style="display:none;">0</span>
+      </a>
+      <a href="#" style="opacity: 0.7; cursor: not-allowed;">
+        <i class="fas fa-book"></i> Vehicle Ledger
+      </a>
+      <a href="#" style="opacity: 0.7; cursor: not-allowed;">
+        <i class="fas fa-file-invoice-dollar"></i> Generate Report
+      </a>
+    </div>
 
-  <main>
+    <div class="nav-section" style="margin-top: 20px;">
+      <small>SYSTEM</small>
+      <a href="#" style="opacity: 0.7; cursor: not-allowed;">
+        <i class="fas fa-user-circle"></i> My Profile
+      </a>
+      <a href="javascript:void(0)" onclick="logout()" style="color: #f87171;">
+        <i class="fas fa-sign-out-alt"></i> Logout
+      </a>
+    </div>
+</nav>
+
+<main>
     <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
       <div>
         <h1>Verification Queue</h1>
         <p style="color: var(--text-muted);">Review and approve vehicle renewal requests.</p>
       </div>
+      
       <div class="search-box" style="display: flex; gap: 10px;">
-        <input type="text" id="lookupPlate" placeholder="Quick Plate Lookup..." style="padding: 8px; border-radius: 6px; border: 1px solid #ddd;">
+        <input type="text" id="lookupPlate" placeholder="Quick Plate Lookup..." style="padding: 10px; border-radius: 6px; border: 1px solid #ddd; width: 200px;">
         <button onclick="quickLookup()" class="btn-primary" style="width: auto; padding: 0 15px;"><i class="fas fa-search"></i></button>
       </div>
     </header>
 
-    <div class="stats-grid" style="margin-bottom: 25px;">
+    <div class="stats-grid" style="margin-bottom: 25px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
         <div class="stat-card">
-            <h3>Pending Tasks</h3>
-            <p id="statPending">0</p>
+            <h3 style="font-size: 14px; color: var(--text-muted);">Queue Status</h3>
+            <p id="statPending" style="font-size: 24px; font-weight: bold;">0</p>
+            <span style="font-size: 12px; color: #f59e0b;">Awaiting Review</span>
         </div>
         <div class="stat-card">
-            <h3>Verified Today</h3>
-            <p id="statToday" style="color: var(--primary);">0</p>
+            <h3 style="font-size: 14px; color: var(--text-muted);">Verified Today</h3>
+            <p id="statToday" style="font-size: 24px; font-weight: bold; color: var(--primary);">0</p>
+            <span style="font-size: 12px; color: #10b981;">Completed Tasks</span>
+        </div>
+        <div class="stat-card">
+            <h3 style="font-size: 14px; color: var(--text-muted);">System Status</h3>
+            <p style="font-size: 24px; font-weight: bold; color: #10b981;">ONLINE</p>
+            <span style="font-size: 12px;">Server Node-01</span>
         </div>
     </div>
 
-    <div class="card">
-      <table>
-        <thead>
-          <tr>
-            <th>Plate No</th>
-            <th>Owner Name</th>
-            <th>Type</th>
-            <th>Amount</th>
-            <th style="text-align: center;">Action</th>
-          </tr>
-        </thead>
-        <tbody id="paymentTable"></tbody>
-      </table>
-    </div>
-  </main>
+    </main>
 
   <div id="inspectModal" class="modal">
     <div class="inspection-modal">
