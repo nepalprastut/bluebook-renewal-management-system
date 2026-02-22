@@ -58,57 +58,65 @@
 </head>
 <body class="admin-body">
 
-  <nav>
-    <h2>Admin Portal</h2>
-    <a href="admin.html" class="active"><i class="fas fa-chart-line"></i> Dashboard</a>
-    <a href="admin_users.html"><i class="fas fa-users"></i> Manage Users</a>
-    <a href="admin_officers.html"><i class="fas fa-user-tie"></i> Manage Officers</a>
-    <a href="admin_prices.html"><i class="fas fa-tags"></i> Tax Rates</a>
-    <a href="javascript:void(0)" onclick="logout()" style="margin-top: auto; color: #f87171;"><i class="fas fa-sign-out-alt"></i> Logout</a>
-  </nav>
+<nav>
+    <h2>Officer Portal</h2>
+    <div class="nav-section">
+      <small>MAIN MENU</small>
+      <a href="officer.html" class="active">
+        <i class="fas fa-clipboard-list"></i> Pending Renewals
+        <span id="pendingBadge" class="nav-badge" style="display:none;">0</span>
+      </a>
+      <a href="#" style="opacity: 0.7; cursor: not-allowed;">
+        <i class="fas fa-book"></i> Vehicle Ledger
+      </a>
+      <a href="#" style="opacity: 0.7; cursor: not-allowed;">
+        <i class="fas fa-file-invoice-dollar"></i> Generate Report
+      </a>
+    </div>
 
-  <main>
-    <header style="margin-bottom: 40px;">
-      <h1>System Overview</h1>
-      <p style="color: var(--text-muted);">Real-time monitoring of the Bluebook Renewal System.</p>
+    <div class="nav-section" style="margin-top: 20px;">
+      <small>SYSTEM</small>
+      <a href="#" style="opacity: 0.7; cursor: not-allowed;">
+        <i class="fas fa-user-circle"></i> My Profile
+      </a>
+      <a href="javascript:void(0)" onclick="logout()" style="color: #f87171;">
+        <i class="fas fa-sign-out-alt"></i> Logout
+      </a>
+    </div>
+</nav>
+
+<main>
+    <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+      <div>
+        <h1>Verification Queue</h1>
+        <p style="color: var(--text-muted);">Review and approve vehicle renewal requests.</p>
+      </div>
+      
+      <div class="search-box" style="display: flex; gap: 10px;">
+        <input type="text" id="lookupPlate" placeholder="Quick Plate Lookup..." style="padding: 10px; border-radius: 6px; border: 1px solid #ddd; width: 200px;">
+        <button onclick="quickLookup()" class="btn-primary" style="width: auto; padding: 0 15px;"><i class="fas fa-search"></i></button>
+      </div>
     </header>
 
-    <div class="stats-grid">
-      <div class="stat-card">
-        <h3>Total Revenue</h3>
-        <p id="statRev" class="stat-value" style="color: #16a34a;">Rs. 0</p>
-      </div>
-      <div class="stat-card">
-        <h3>Users</h3>
-        <p id="statUsers" class="stat-value">0</p>
-      </div>
-      <div class="stat-card">
-        <h3>Pending Renewals</h3>
-        <p id="statPending" class="stat-value" style="color: #ef4444;">0</p>
-      </div>
+    <div class="stats-grid" style="margin-bottom: 25px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
+        <div class="stat-card">
+            <h3 style="font-size: 14px; color: var(--text-muted);">Queue Status</h3>
+            <p id="statPending" style="font-size: 24px; font-weight: bold;">0</p>
+            <span style="font-size: 12px; color: #f59e0b;">Awaiting Review</span>
+        </div>
+        <div class="stat-card">
+            <h3 style="font-size: 14px; color: var(--text-muted);">Verified Today</h3>
+            <p id="statToday" style="font-size: 24px; font-weight: bold; color: var(--primary);">0</p>
+            <span style="font-size: 12px; color: #10b981;">Completed Tasks</span>
+        </div>
+        <div class="stat-card">
+            <h3 style="font-size: 14px; color: var(--text-muted);">System Status</h3>
+            <p style="font-size: 24px; font-weight: bold; color: #10b981;">ONLINE</p>
+            <span style="font-size: 12px;">Server Node-01</span>
+        </div>
     </div>
 
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 25px;">
-      <div class="card nav-tile" onclick="location.href='admin_users.html'">
-        <div class="tile-icon" style="background: #eff6ff; color: #3b82f6;"><i class="fas fa-search"></i></div>
-        <h3>User Lookup</h3>
-        <p>Search for citizens, view registered vehicles, and manage owner profiles.</p>
-      </div>
-
-      <div class="card nav-tile" onclick="location.href='admin_officers.html'">
-        <div class="tile-icon" style="background: #f0fdf4; color: #16a34a;"><i class="fas fa-user-tie"></i></div>
-        <h3>Officer Management</h3>
-        <p>Search, create, and manage departmental verification officer accounts.</p>
-      </div>
-
-      <div class="card nav-tile" onclick="location.href='admin_prices.html'">
-        <div class="tile-icon" style="background: #fff7ed; color: #ea580c;"><i class="fas fa-hand-holding-usd"></i></div>
-        <h3>Tax & Price Settings</h3>
-        <p>Configure renewal fees and taxes for different vehicle categories.</p>
-      </div>
-    </div>
-  </main>
-
+    </main>
   <script>
     if (sessionStorage.getItem("role") !== "ADMIN") window.location.replace("login.html");
 

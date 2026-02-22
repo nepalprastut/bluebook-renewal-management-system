@@ -149,3 +149,8 @@ INSERT INTO tax_prices (vehicle_type, base_price) VALUES
 ('Car', 15000),
 ('Truck', 35000),
 ('Bus', 25000);
+
+
+ALTER TABLE tax_prices 
+ADD CONSTRAINT check_positive_tax 
+CHECK (base_price >= 0);
