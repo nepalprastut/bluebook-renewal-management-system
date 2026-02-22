@@ -32,7 +32,7 @@ router.post("/register-officer", async (req, res) => {
   }
 });
 
-// IMPROVED SEARCH: Finds Owners AND Officers
+// IMPROVED SEARCH
 router.get("/search-any-user", async (req, res) => {
   const { query } = req.query; // Search by username or part of name
   try {
@@ -64,7 +64,7 @@ router.get("/vehicles-by-user/:id", async (req, res) => {
     } catch (err) { res.status(500).json({ error: "Fetch failed" }); }
 });
 
-// DELETE USER (Safe Transaction)
+// DELETE USER
 router.delete('/users/:id', async (req, res) => {
     const { id } = req.params;
     const client = await pool.connect();
@@ -128,6 +128,40 @@ router.get("/stats", async (req, res) => {
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+});
+
+
+// TAX PRICES 
+router.get("/prices", async (req, res) => {
+  try {
+    const result = await pool.query("SELECT * FROM tax_prices ORDER BY vehicle_type ASC");
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: "Database table 'tax_prices' missing." });
+  }
+});
+
+router.post("/update-price", async (req, res) => {
+  const { id, base_price } = req.body;
+  try {
+    // Parse values to integers to ensure DB compatibility
+    const numericId = parseInt(id);
+    const numericPrice = parseFloat(base_price);
+
+    if (isNaN(numericId) || isNaN(numericPrice)) {
+        return res.status(400).json({ error: "Invalid ID or Price format" });
+    }
+
+    await pool.query(
+        "UPDATE tax_prices SET base_price = $1 WHERE id = $2", 
+        [numericPrice, numericId]
+    );
+    
+    res.json({ message: "Price updated" });
+  } catch (err) {
+    console.error(err); 
+    res.status(500).json({ error: "Update failed: " + err.message });
   }
 });
 
